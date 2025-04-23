@@ -7,7 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import FindEmailPage from "./pages/FindEmailPage";
 import FindPasswordPage from "./pages/FindPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-
+import AnalyzePage from "./pages/AnalyzePage";
 function App() {
   return (
     <Router>
@@ -16,22 +16,10 @@ function App() {
           <Route path="/" element={<MainPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage></LoginPage>} />
-          <Route
-            path="/find-email"
-            element={<FindEmailPage></FindEmailPage>}
-          ></Route>
-          <Route
-            path="/find-password"
-            element={<FindPasswordPage></FindPasswordPage>}
-          ></Route>
-          <Route
-            path="/reset-password"
-            element={<ResetPasswordPage></ResetPasswordPage>}
-          ></Route>
-          <Route
-            path="/analyze"
-            element={<div>분석하기 페이지 (개발 예정)</div>}
-          />
+          <Route path="/find-email" element={<FindEmailPage />}></Route>
+          <Route path="/find-password" element={<FindPasswordPage />}></Route>
+          <Route path="/reset-password" element={<ResetPasswordPage />}></Route>
+          <Route path="/analyze" element={<AnalyzePage />} />
           <Route
             path="/history"
             element={<div>분석내역 페이지 (개발 예정)</div>}
