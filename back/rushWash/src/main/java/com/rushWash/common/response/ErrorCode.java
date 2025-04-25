@@ -12,7 +12,7 @@ public enum ErrorCode {
 
     // 400 Bad Request
     BAD_REQUEST(400, HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
-    DUPLICATE_NICKNAME(400, HttpStatus.BAD_REQUEST, "이미 사용 중인 닉네임입니다."),
+    DUPLICATE_PHONE_NUMBER(400, HttpStatus.BAD_REQUEST, "이미 사용 중인 전화번호입니다."),
     DUPLICATE_EMAIL(400, HttpStatus.BAD_REQUEST, "이미 사용 중인 이메일입니다."),
 
     // 500 Internal Server Error
