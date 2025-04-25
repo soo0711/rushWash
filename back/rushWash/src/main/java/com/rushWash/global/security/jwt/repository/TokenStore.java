@@ -1,5 +1,6 @@
 package com.rushWash.global.security.jwt.repository;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,4 +30,3 @@ public class TokenStore {
         return token.equals(refreshTokenStore.get(userId));
     }
 }
-

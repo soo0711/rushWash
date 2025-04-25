@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserRestController {
 
     private final UserService userService;
-
     @PostMapping("/signup")
     public ApiResponse<UserSignupResponse> userSignup(
             @RequestBody UserSignupRequest request){
@@ -32,4 +31,13 @@ public class UserRestController {
         return userService.userSignIn(request);
     }
 
+    @PostMapping("/sign-out")
+    public ApiResponse<String> userSignOut(
+            @RequestHeader("Authorization") String authHeader) {
+
+        String accessToken = authHeader.substring(7);
+        userService.signOut(accessToken);
+
+        return ApiResponse.ok("로그아웃 성공");
+    }
 }

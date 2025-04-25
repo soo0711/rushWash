@@ -83,4 +83,9 @@ public class UserService {
 
         return new UserSignInResponse(accessToken, newRefreshToken, user);
     }
+
+    public void signOut(String token) {
+        int userId = jwtUtil.getUserIdFromToken(token);
+        tokenStore.removeRefreshToken(userId);
+    }
 }
