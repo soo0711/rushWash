@@ -4,6 +4,7 @@ import com.rushWash.common.EncryptUtils;
 import com.rushWash.common.response.ApiResponse;
 import com.rushWash.common.response.CustomException;
 import com.rushWash.common.response.ErrorCode;
+import com.rushWash.domain.users.api.dto.request.UserDuplicateCheckRequest;
 import com.rushWash.domain.users.api.dto.request.UserSignInRequest;
 import com.rushWash.domain.users.api.dto.request.UserSignupRequest;
 import com.rushWash.domain.users.api.dto.response.UserSignInResponse;
@@ -27,16 +28,6 @@ public class UserService {
 
         // 비밀번호 암호화
         String hashedPassword = EncryptUtils.sha256(request.password());
-
-        // 이메일 중복 확인
-        if (userRepository.existsByEmail(request.email())) {
-            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
-        }
-
-        // 전화번호 중복 확인
-        if (userRepository.existsByPhoneNumber(request.phoneNumber())) {
-            throw new CustomException(ErrorCode.DUPLICATE_PHONE_NUMBER);
-        }
 
         User user = userRepository.save(
                 User.builder()
@@ -87,5 +78,17 @@ public class UserService {
     public void signOut(String token) {
         int userId = jwtUtil.getUserIdFromToken(token);
         tokenStore.removeRefreshToken(userId);
+    }
+
+    public void isUserDuplicated(UserDuplicateCheckRequest request){
+        // 이메일 중복 확인
+        if (userRepository.existsByEmail(request.email())) {
+            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        // 전화번호 중복 확인
+        if (userRepository.existsByPhoneNumber(request.phoneNumber())) {
+            throw new CustomException(ErrorCode.DUPLICATE_PHONE_NUMBER);
+        }
     }
 }

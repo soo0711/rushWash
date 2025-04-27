@@ -1,6 +1,7 @@
 package com.rushWash.domain.users.api;
 
 import com.rushWash.common.response.ApiResponse;
+import com.rushWash.domain.users.api.dto.request.UserDuplicateCheckRequest;
 import com.rushWash.domain.users.api.dto.request.UserSignInRequest;
 import com.rushWash.domain.users.api.dto.request.UserSignupRequest;
 import com.rushWash.domain.users.api.dto.response.UserSignInResponse;
@@ -39,5 +40,14 @@ public class UserRestController {
         userService.signOut(accessToken);
 
         return ApiResponse.ok("로그아웃 성공");
+    }
+
+    @PostMapping("/duplicate-check")
+    public ApiResponse<String> checkUserDuplication(
+            @RequestBody UserDuplicateCheckRequest request){
+
+        userService.isUserDuplicated(request);
+
+        return ApiResponse.ok("사용 가능 합니다.");
     }
 }
