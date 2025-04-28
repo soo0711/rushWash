@@ -8,6 +8,14 @@ import FindEmailPage from "./pages/FindEmailPage";
 import FindPasswordPage from "./pages/FindPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AnalyzePage from "./pages/AnalyzePage";
+import BothAnalyzePage from "./pages/BothAnalyzePage";
+import StainAnalyzePage from "./pages/StainAnalyzePage";
+import LabelAnalyzePage from "./pages/LabelAnalyzePage";
+import HistoryPage from "./pages/HistoryPage";
+import NearbyLaundryPage from "./pages/NearbyLaundryPage";
+import FabricSoftenerPage from "./pages/FabricSoftenerPage";
+import FabricSoftenerResultPage from "./pages/FabricSoftenerResultPage";
+
 function App() {
   return (
     <Router>
@@ -20,18 +28,16 @@ function App() {
           <Route path="/find-password" element={<FindPasswordPage />}></Route>
           <Route path="/reset-password" element={<ResetPasswordPage />}></Route>
           <Route path="/analyze" element={<AnalyzePage />} />
+          <Route path="/analyze/both" element={<BothAnalyzePage />} />
+          <Route path="/analyze/stain" element={<StainAnalyzePage />} />
+          <Route path="/analyze/label" element={<LabelAnalyzePage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/fabricsoftener" element={<FabricSoftenerPage />} />
           <Route
-            path="/history"
-            element={<div>분석내역 페이지 (개발 예정)</div>}
+            path="/fabricsoftener/result/:categoryId"
+            element={<FabricSoftenerResultPage />}
           />
-          <Route
-            path="/maintenance"
-            element={<div>유지관리 페이지 (개발 예정)</div>}
-          />
-          <Route
-            path="/laundry-map"
-            element={<div>세탁소 찾기 페이지 (개발 예정)</div>}
-          />
+          <Route path="/laundry-map" element={<NearbyLaundryPage />} />
         </Routes>
       </div>
     </Router>

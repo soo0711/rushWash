@@ -19,7 +19,7 @@ const MainPage = () => {
         navigate("/history");
         break;
       case "섬유유연제":
-        navigate("/maintenance");
+        navigate("/fabricsoftener");
         break;
       case "근처 세탁소":
         navigate("/laundry-map");

@@ -4,11 +4,19 @@ import { Link, useNavigate } from "react-router-dom";
 
 const FindPasswordPage = () => {
   const navigate = useNavigate();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [nameErrorMsg, setNameErrorMsg] = useState("");
   const [emailErrorMsg, setEmailErrorMsg] = useState("");
   const [codeErrorMsg, setCodeErrorMsg] = useState("");
+
+  // 이름 변경 핸들러
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+    setNameErrorMsg("");
+  };
 
   // 이메일 변경 핸들러
   const handleEmailChange = (e) => {
@@ -25,12 +33,18 @@ const FindPasswordPage = () => {
   // 인증번호 전송 핸들러
   const handleSendVerification = (e) => {
     e.preventDefault();
+
+    if (!name) {
+      setNameErrorMsg("이름을 입력하지 않았습니다");
+      return;
+    }
+
     if (!email) {
       setEmailErrorMsg("이메일을 입력하지 않았습니다");
       return;
     }
 
-    console.log("인증번호 전송:", email);
+    console.log("인증번호 전송:", name, email);
     // 여기에 실제 인증번호 전송 API 호출 로직 추가
     alert("인증번호가 전송되었습니다.");
     setIsEmailVerified(true);
@@ -47,7 +61,7 @@ const FindPasswordPage = () => {
     // 여기에 실제 인증번호 확인 API 호출 로직 추가
     alert("인증이 완료되었습니다. 비밀번호 재설정 페이지로 이동합니다.");
     // 비밀번호 재설정 페이지로 이동
-    navigate("/reset-password", { state: { email } });
+    navigate("/reset-password", { state: { name, email } });
   };
 
   return (
@@ -61,6 +75,22 @@ const FindPasswordPage = () => {
         </h1>
 
         <div className="space-y-6 text-3xl">
+          {/* 이름 입력 필드 */}
+          <div>
+            <label className="block mb-2 text-3xl">이름 입력</label>
+            <input
+              type="text"
+              value={name}
+              onChange={handleNameChange}
+              className="w-full rounded-md border border-gray-300 p-3"
+              placeholder=""
+              required
+            />
+            {nameErrorMsg && (
+              <p className="text-red-500 text-sm mt-1">{nameErrorMsg}</p>
+            )}
+          </div>
+
           <div>
             <label className="block mb-2 text-3xl">이메일 입력</label>
             <div className="flex">
