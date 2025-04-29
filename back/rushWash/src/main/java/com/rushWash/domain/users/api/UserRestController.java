@@ -1,11 +1,8 @@
 package com.rushWash.domain.users.api;
 
 import com.rushWash.common.response.ApiResponse;
-import com.rushWash.domain.users.api.dto.request.UserDuplicateCheckRequest;
-import com.rushWash.domain.users.api.dto.request.UserSignInRequest;
-import com.rushWash.domain.users.api.dto.request.UserSignupRequest;
-import com.rushWash.domain.users.api.dto.response.UserSignInResponse;
-import com.rushWash.domain.users.api.dto.response.UserSignupResponse;
+import com.rushWash.domain.users.api.dto.request.*;
+import com.rushWash.domain.users.api.dto.response.*;
 import com.rushWash.domain.users.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -50,4 +47,41 @@ public class UserRestController {
 
         return ApiResponse.ok("사용 가능 합니다.");
     }
+
+    @GetMapping("/email-find")
+    public ApiResponse<UserEmailFindResponse> userEmailFind(
+            @RequestBody UserEmailFindRequest request){
+
+        UserEmailFindResponse response = userService.getEmailByPhoneNumber(request);
+
+        return ApiResponse.ok(response);
+    }
+
+    @PostMapping("/send-verification-code")
+    public ApiResponse<UserSendVerificationCodeResponse> userSendVerificationCode(
+            @RequestBody UserSendVerificationCodeRequest request){
+        UserSendVerificationCodeResponse response = userService.getUserByNameAndEmail(request);
+
+        return ApiResponse.ok(response);
+    }
+
+
+    @GetMapping("/verify-code")
+    public ApiResponse<UserVerifyCodeResponse> userVerifyCode(
+            @RequestBody UserVerifyCodeRequest request){
+        //인증번호 인증 성공
+        UserVerifyCodeResponse response = userService.verifyCode(request);
+
+        return ApiResponse.ok(response);
+    }
+
+    @PatchMapping("/password")
+    public UserPasswordResponse userPassword(
+            @RequestBody UserPasswordRequest request){
+
+        UserPasswordResponse response = userService.resetPassword(request);
+
+        return response;
+    }
+
 }
