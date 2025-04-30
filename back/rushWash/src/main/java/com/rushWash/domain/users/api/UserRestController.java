@@ -48,7 +48,7 @@ public class UserRestController {
         return ApiResponse.ok("사용 가능 합니다.");
     }
 
-    @GetMapping("/email-find")
+    @GetMapping("/email")
     public ApiResponse<UserEmailFindResponse> userEmailFind(
             @RequestBody UserEmailFindRequest request){
 
@@ -57,7 +57,7 @@ public class UserRestController {
         return ApiResponse.ok(response);
     }
 
-    @PostMapping("/send-verification-code")
+    @PostMapping("/verify-code")
     public ApiResponse<UserSendVerificationCodeResponse> userSendVerificationCode(
             @RequestBody UserSendVerificationCodeRequest request){
         UserSendVerificationCodeResponse response = userService.getUserByNameAndEmail(request);
