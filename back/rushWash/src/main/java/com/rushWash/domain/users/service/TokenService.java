@@ -3,11 +3,11 @@ package com.rushWash.domain.users.service;
 import com.rushWash.common.response.CustomException;
 import com.rushWash.common.response.ErrorCode;
 import com.rushWash.global.security.jwt.JwtUtil;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class TokenService {
     private final JwtUtil jwtUtil;
 
