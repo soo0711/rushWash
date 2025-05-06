@@ -7,7 +7,7 @@ public enum ErrorCode {
     NOT_FOUND_END_POINT(404, HttpStatus.NOT_FOUND, "존재하지 않는 API입니다."),
     USER_NOT_FOUND(404, HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다."),
 
-    FABRIC_CATEGORY_NOT_FOUND(404, HttpStatus.NOT_FOUND, "향기 카테고리 ID를 찾을 수 없습니다."),
+    FABRIC_CATEGORY_NOT_FOUND(404, HttpStatus.NOT_FOUND, "향기 카테고리를 찾을 수 없습니다."),
     // 403 Forbidden
     Forbidden(403, HttpStatus.FORBIDDEN, "접속 권한이 없습니다."),
     NO_EDIT_PERMISSION(403, HttpStatus.FORBIDDEN, "권한이 없습니다."),
