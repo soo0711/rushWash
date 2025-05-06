@@ -2,7 +2,6 @@ package com.rushWash.domain.fabricSofteners.api;
 
 import com.rushWash.common.response.ApiResponse;
 import com.rushWash.domain.fabricSofteners.api.dto.response.FabricSoftenerResponse;
-import com.rushWash.domain.fabricSofteners.domain.ScentCategoryId;
 import com.rushWash.domain.fabricSofteners.service.FabricSoftenerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,8 +21,8 @@ public class FabricSoftenerRestController {
     @GetMapping("/{fabricScent}")
     public ApiResponse<List<FabricSoftenerResponse>> getFabricSoftenerList(
             @PathVariable("fabricScent") String fabricScent){
-        int scentCategoryId = ScentCategoryId.fromValue(fabricScent);
-        List<FabricSoftenerResponse> response = fabricSoftenerService.getFabricSoftenerList(scentCategoryId);
+
+        List<FabricSoftenerResponse> response = fabricSoftenerService.getFabricSoftenerList(fabricScent);
 
         return ApiResponse.ok(response);
     }

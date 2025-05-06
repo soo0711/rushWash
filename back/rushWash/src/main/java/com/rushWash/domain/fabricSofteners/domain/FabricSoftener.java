@@ -17,8 +17,8 @@ public class FabricSoftener {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @Column(name = "scent_category_id")
-    private int scentCategoryId;
+    @Column(name = "scent_category")
+    private String scentCategory;
     private String brand;
     @Column(name = "product_name")
     private String productName;

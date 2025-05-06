@@ -13,8 +13,8 @@ public class FabricSoftenerService {
 
     private final FabricSoftenerRepository fabricSoftenerRepository;
 
-    public List<FabricSoftenerResponse> getFabricSoftenerList(int scentCategoryId){
-        return fabricSoftenerRepository.findFabricSoftenerListByScentCategoryId(scentCategoryId);
+    public List<FabricSoftenerResponse> getFabricSoftenerList(String fabricScent){
+        return fabricSoftenerRepository.findFabricSoftenerListByScentCategory(fabricScent);
     }
 
 }

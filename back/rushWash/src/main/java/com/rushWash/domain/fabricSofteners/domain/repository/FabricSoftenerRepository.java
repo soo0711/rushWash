@@ -11,6 +11,6 @@ import java.util.List;
 public interface FabricSoftenerRepository extends JpaRepository<FabricSoftener,Integer> {
 
     @Query("SELECT new com.rushWash.domain.fabricSofteners.api.dto.response.FabricSoftenerResponse(f.brand, f.productName) " +
-            "FROM FabricSoftener f WHERE f.scentCategoryId = :scentCategoryId")
-    List<FabricSoftenerResponse> findFabricSoftenerListByScentCategoryId(@Param("scentCategoryId") int scentCategoryId);
+            "FROM FabricSoftener f WHERE f.scentCategory = :fabricScent")
+    List<FabricSoftenerResponse> findFabricSoftenerListByScentCategory(@Param("fabricScent") String fabricScent);
 }
