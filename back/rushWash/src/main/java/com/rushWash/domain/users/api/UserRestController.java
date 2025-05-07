@@ -1,6 +1,8 @@
 package com.rushWash.domain.users.api;
 
 import com.rushWash.common.response.ApiResponse;
+import com.rushWash.common.response.CustomException;
+import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.users.api.dto.request.*;
 import com.rushWash.domain.users.api.dto.response.*;
 import com.rushWash.domain.users.service.UserService;
@@ -31,7 +33,11 @@ public class UserRestController {
 
     @PostMapping("/sign-out")
     public ApiResponse<String> userSignOut(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(name = "Authorization", required = false) String authHeader) {
+
+        if (authHeader == null || authHeader.isEmpty()){
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
 
         String accessToken = authHeader.substring(7);
         userService.signOut(accessToken);

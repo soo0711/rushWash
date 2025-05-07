@@ -1,6 +1,8 @@
 package com.rushWash.domain.washings.api;
 
 import com.rushWash.common.response.ApiResponse;
+import com.rushWash.common.response.CustomException;
+import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.users.service.TokenService;
 import com.rushWash.domain.washings.api.dto.request.WashingEstimationRequest;
 import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
@@ -19,7 +21,12 @@ public class WashingRestController {
 
     @GetMapping
     public ApiResponse<WashingListResponse> getWashingList(
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(name = "Authorization", required = false) String authHeader) {
+
+        if (authHeader == null || authHeader.isEmpty()){
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
         int userId = tokenService.extractUserIdFromHeader(authHeader);
         WashingListResponse response = washingService.getWashingListByUserId(userId);
 
@@ -28,8 +35,13 @@ public class WashingRestController {
 
     @GetMapping("/{washingHistoryId}")
     public ApiResponse<WashingDetailResponse> getWashingDetail(
-            @RequestHeader("Authorization") String authHeader,
+            @RequestHeader(name = "Authorization", required = false) String authHeader,
             @PathVariable int washingHistoryId) {
+
+        if (authHeader == null || authHeader.isEmpty()){
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
         int userId = tokenService.extractUserIdFromHeader(authHeader);
         WashingDetailResponse response = washingService.getWashingDetailByUserIdAndWashingHistoryId(userId, washingHistoryId);
         return ApiResponse.ok(response);
@@ -39,7 +51,12 @@ public class WashingRestController {
     public ApiResponse<String> washingEstimation(
             @PathVariable int washingHistoryId,
             @RequestBody WashingEstimationRequest request,
-            @RequestHeader("Authorization") String authHeader) {
+            @RequestHeader(name = "Authorization", required = false) String authHeader) {
+
+        if (authHeader == null || authHeader.isEmpty()){
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
         int userId = tokenService.extractUserIdFromHeader(authHeader);
         washingService.updateWashingHistory(userId, washingHistoryId, request);
 
