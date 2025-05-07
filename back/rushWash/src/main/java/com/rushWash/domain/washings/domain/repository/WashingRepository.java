@@ -1,5 +1,7 @@
 package com.rushWash.domain.washings.domain.repository;
 
+import com.rushWash.domain.users.domain.User;
+import com.rushWash.domain.washings.api.dto.request.WashingEstimationRequest;
 import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
 import com.rushWash.domain.washings.api.dto.response.WashingList;
 import com.rushWash.domain.washings.domain.WashingHistory;
@@ -43,4 +45,7 @@ public interface WashingRepository extends JpaRepository<WashingHistory, Integer
     ORDER BY wh.createdAt DESC
 """)
     WashingDetailResponse findDetailByUserIdAndWashingHistoryId(@Param("userId") int userId, @Param(("washingHistoryId")) int washingHistoryId);
+
+
+    WashingHistory findByIdAndUserId(int id, int userId);
 }

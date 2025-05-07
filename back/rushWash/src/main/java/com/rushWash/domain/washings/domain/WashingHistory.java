@@ -29,7 +29,7 @@ public class WashingHistory {
     @Column(name = "label_image_url")
     private String labelImageUrl;
 
-    private boolean estimation;
+    private Boolean estimation;
     @Column(name = "created_at", updatable = false)
     @UpdateTimestamp
     private LocalDateTime createdAt;
