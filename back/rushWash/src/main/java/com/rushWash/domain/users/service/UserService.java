@@ -16,6 +16,9 @@ import com.rushWash.global.security.jwt.JwtUtil;
 import com.rushWash.global.security.jwt.repository.TokenStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -152,10 +155,8 @@ public class UserService {
     }
 
     public UserPasswordResponse resetPassword(UserPasswordRequest request) {
-        User user = userRepository.findById(request.userId());
-        if (user == null) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND);
-        }
+        User user = userRepository.findById(request.userId())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         String hashedPassword = EncryptUtils.sha256(request.password());
         user = user.toBuilder() // 기존 내용은 그대로
@@ -166,4 +167,21 @@ public class UserService {
         return new UserPasswordResponse(true, "비밀번호 변경 성공", user.getId());
     }
 
+    public List<User> getUserList(){
+        return userRepository.findAll();
+    }
+
+    @Transactional
+    public void updateUser(int userId, String name, String email, String phoneNumber){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        user.updateInfo(name, email, phoneNumber);
+    }
+
+    public void deleteUser(int userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        userRepository.deleteById(userId);
+    }
 }
