@@ -45,4 +45,12 @@ public class WashingService {
 
     }
 
+    public List<com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse> getAdminWashingList () {
+        return washingRepository.getWashingList();
+    }
+
+    public List<com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse> getAdminWashingGoodList () {
+        return washingRepository.getWashingGoodList();
+    }
+
 }

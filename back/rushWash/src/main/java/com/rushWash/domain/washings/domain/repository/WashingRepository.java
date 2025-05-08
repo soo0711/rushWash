@@ -1,5 +1,6 @@
 package com.rushWash.domain.washings.domain.repository;
 
+import com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse;
 import com.rushWash.domain.users.domain.User;
 import com.rushWash.domain.washings.api.dto.request.WashingEstimationRequest;
 import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
@@ -28,7 +29,7 @@ public interface WashingRepository extends JpaRepository<WashingHistory, Integer
     List<WashingList> findItemsByUserId(@Param("userId") int userId);
 
 
-    @Query("""
+     @Query("""
     SELECT new com.rushWash.domain.washings.api.dto.response.WashingDetailResponse(
         wh.id,
         wh.stainImageUrl,
@@ -48,4 +49,44 @@ public interface WashingRepository extends JpaRepository<WashingHistory, Integer
 
 
     WashingHistory findByIdAndUserId(int id, int userId);
+
+
+    @Query("""
+    SELECT new com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse(
+        wh.id,
+        wh.userId,
+        wh.analysisType,
+        wh.stainImageUrl,
+        wh.labelImageUrl,
+        wr.stainCategory,
+        wr.analysis,
+        wh.estimation,
+        wh.createdAt
+    )
+    FROM WashingHistory wh
+    JOIN WashingResult wr ON wr.washingHistory.id = wh.id
+    ORDER BY wh.createdAt DESC
+    
+            """)
+    List<WashingListResponse> getWashingList();
+
+    @Query("""
+    SELECT new com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse(
+        wh.id,
+        wh.userId,
+        wh.analysisType,
+        wh.stainImageUrl,
+        wh.labelImageUrl,
+        wr.stainCategory,
+        wr.analysis,
+        wh.estimation,
+        wh.createdAt
+    )
+    FROM WashingHistory wh
+    JOIN WashingResult wr ON wr.washingHistory.id = wh.id
+    WHERE wh.estimation = true
+    ORDER BY wh.createdAt DESC
+
+            """)
+    List<WashingListResponse> getWashingGoodList();
 }
