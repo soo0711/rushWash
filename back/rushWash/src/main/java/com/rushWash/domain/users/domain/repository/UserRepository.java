@@ -4,6 +4,8 @@ import com.rushWash.domain.users.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 public interface UserRepository extends JpaRepository<User, Integer> {
     boolean existsByPhoneNumber(String phoneNumber);
 
@@ -14,5 +16,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     User findByNameAndEmail(String name, String email);
 
-    User findById(int id);
+    Optional<User> findById(int id);
 }
