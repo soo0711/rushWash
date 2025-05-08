@@ -20,7 +20,7 @@ public class AdminUsersRestController {
     @GetMapping
     public ApiResponse<List<User>> getUserList(){
 
-        return ApiResponse.ok(adminUsersService.getUserLit());
+        return ApiResponse.ok(adminUsersService.getUserList());
     }
 
     @PatchMapping
