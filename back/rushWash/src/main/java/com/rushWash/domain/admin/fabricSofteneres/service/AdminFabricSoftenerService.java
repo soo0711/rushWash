@@ -22,6 +22,16 @@ public class AdminFabricSoftenerService {
         return fabricSoftenerService.getFabricSoftenerList();
     }
 
+    public void addFabricSoftener(String scentCategory, String brand, String productName){
+        fabricSoftenerRepository.save(
+                FabricSoftener.builder()
+                        .scentCategory(scentCategory)
+                        .brand(brand)
+                        .productName(productName)
+                        .build()
+        );
+    }
+
     @Transactional
     public void updateFabricSoftenerByFabricSoftenerId(int fabricSoftenerId, String scentCategory, String brand, String productName){
         FabricSoftener fabricSoftener = fabricSoftenerRepository.findById(fabricSoftenerId)

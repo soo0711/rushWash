@@ -2,6 +2,7 @@ package com.rushWash.domain.admin.fabricSofteneres.api;
 
 import com.rushWash.common.response.ApiResponse;
 import com.rushWash.domain.admin.fabricSofteneres.api.dto.request.AdminFabricSoftenerDeleteRequest;
+import com.rushWash.domain.admin.fabricSofteneres.api.dto.request.AdminFabricSoftenerRequest;
 import com.rushWash.domain.admin.fabricSofteneres.api.dto.request.AdminFabricSoftenerUpdateRequest;
 import com.rushWash.domain.admin.fabricSofteneres.service.AdminFabricSoftenerService;
 import com.rushWash.domain.fabricSofteners.domain.FabricSoftener;
@@ -21,6 +22,14 @@ public class AdminFabricSoftenerRestController {
     public ApiResponse<List<FabricSoftener>> getFabricSoftenerList() {
 
         return ApiResponse.ok(adminFabricSoftenerService.getFabricSoftenerList());
+    }
+
+    @PostMapping
+    public ApiResponse<String> addFabricSoftener(
+            @RequestBody AdminFabricSoftenerRequest request){
+        adminFabricSoftenerService.addFabricSoftener(request.scentCategory(), request.brand(), request.productName());
+
+        return ApiResponse.ok("섬유유연제 생성 완료");
     }
 
     @PatchMapping
