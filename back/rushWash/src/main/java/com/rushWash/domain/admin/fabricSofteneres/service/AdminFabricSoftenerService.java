@@ -1,10 +1,13 @@
 package com.rushWash.domain.admin.fabricSofteneres.service;
 
+import com.rushWash.common.response.CustomException;
+import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.fabricSofteners.domain.FabricSoftener;
 import com.rushWash.domain.fabricSofteners.domain.repository.FabricSoftenerRepository;
 import com.rushWash.domain.fabricSofteners.service.FabricSoftenerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,5 +20,12 @@ public class AdminFabricSoftenerService {
 
     public List<FabricSoftener> getFabricSoftenerList(){
         return fabricSoftenerService.getFabricSoftenerList();
+    }
+
+    @Transactional
+    public void updateFabricSoftenerByFabricSoftenerId(int fabricSoftenerId, String scentCategory, String brand, String productName){
+        FabricSoftener fabricSoftener = fabricSoftenerRepository.findById(fabricSoftenerId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FABRIC_CATEGORY_NOT_FOUND));
+        fabricSoftener.updateInfo(scentCategory, brand, productName);
     }
 }

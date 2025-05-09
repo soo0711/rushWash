@@ -28,4 +28,10 @@ public class FabricSoftener {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public void updateInfo(String scentCategory, String brand, String productName) {
+        this.scentCategory = scentCategory;
+        this.brand = brand;
+        this.productName = productName;
+    }
 }

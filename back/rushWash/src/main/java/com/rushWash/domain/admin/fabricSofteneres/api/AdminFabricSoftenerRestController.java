@@ -4,12 +4,8 @@ import com.rushWash.common.response.ApiResponse;
 import com.rushWash.domain.admin.fabricSofteneres.api.dto.request.AdminFabricSoftenerUpdateRequest;
 import com.rushWash.domain.admin.fabricSofteneres.service.AdminFabricSoftenerService;
 import com.rushWash.domain.fabricSofteners.domain.FabricSoftener;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -26,4 +22,12 @@ public class AdminFabricSoftenerRestController {
         return ApiResponse.ok(adminFabricSoftenerService.getFabricSoftenerList());
     }
 
+    @PatchMapping
+    public ApiResponse<String> updateFabricSoftenerByFabricSoftenerId(
+            @RequestBody AdminFabricSoftenerUpdateRequest request){
+        adminFabricSoftenerService.updateFabricSoftenerByFabricSoftenerId(request.fabricSoftenerId(), request.scentCategory(),
+                request.brand(), request.productName());
+
+        return ApiResponse.ok("섬유유연제 업데이트 완료");
+    }
 }
