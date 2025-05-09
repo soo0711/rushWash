@@ -29,7 +29,7 @@ public class AdminUsersService {
     }
 
     public void deleteUser(int userId){
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         userRepository.deleteById(userId);

@@ -7,11 +7,6 @@
       <excludeFolder url="file://$MODULE_DIR$/../../rushWash/build" />
       <excludeFolder url="file://$MODULE_DIR$/../../rushWash/out" />
     </content>
-    <content url="file://$MODULE_DIR$/../../rushWash">
-      <excludeFolder url="file://$MODULE_DIR$/../../rushWash/.gradle" />
-      <excludeFolder url="file://$MODULE_DIR$/../../rushWash/build" />
-      <excludeFolder url="file://$MODULE_DIR$/../../rushWash/out" />
-    </content>
     <orderEntry type="jdk" jdkName="17" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

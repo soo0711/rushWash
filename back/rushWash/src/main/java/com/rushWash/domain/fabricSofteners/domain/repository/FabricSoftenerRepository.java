@@ -13,4 +13,5 @@ public interface FabricSoftenerRepository extends JpaRepository<FabricSoftener,I
     @Query("SELECT new com.rushWash.domain.fabricSofteners.api.dto.response.FabricSoftenerResponse(f.brand, f.productName) " +
             "FROM FabricSoftener f WHERE f.scentCategory = :fabricScent")
     List<FabricSoftenerResponse> findFabricSoftenerListByScentCategory(@Param("fabricScent") String fabricScent);
+    List<FabricSoftener> findAllByOrderByScentCategory();
 }
