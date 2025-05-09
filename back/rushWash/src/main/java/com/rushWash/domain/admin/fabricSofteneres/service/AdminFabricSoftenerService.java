@@ -28,4 +28,11 @@ public class AdminFabricSoftenerService {
                 .orElseThrow(() -> new CustomException(ErrorCode.FABRIC_CATEGORY_NOT_FOUND));
         fabricSoftener.updateInfo(scentCategory, brand, productName);
     }
+
+    public void deleteFabricSoftenerByFabricSoftenerId(int fabricSoftenerId){
+        fabricSoftenerRepository.findById(fabricSoftenerId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FABRIC_CATEGORY_NOT_FOUND));
+
+        fabricSoftenerRepository.deleteById(fabricSoftenerId);
+    }
 }
