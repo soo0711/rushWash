@@ -1,7 +1,10 @@
 package com.rushWash.domain.admin.users.service;
 
+import com.rushWash.common.response.CustomException;
+import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.admin.users.api.dto.request.AdminUserUpdateRequest;
 import com.rushWash.domain.users.domain.User;
+import com.rushWash.domain.users.domain.repository.UserRepository;
 import com.rushWash.domain.users.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +18,9 @@ public class AdminUsersService {
 
     private final UserService userService;
 
-    public List<User> getUserLit(){
+    private final UserRepository userRepository;
+
+    public List<User> getUserList(){
         return userService.getUserList();
     }
 
@@ -24,6 +29,9 @@ public class AdminUsersService {
     }
 
     public void deleteUser(int userId){
-        userService.deleteUser(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        userRepository.deleteById(userId);
     }
 }

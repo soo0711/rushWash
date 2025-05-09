@@ -6,10 +6,12 @@ import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.users.service.TokenService;
 import com.rushWash.domain.washings.api.dto.request.WashingEstimationRequest;
 import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
-import com.rushWash.domain.washings.api.dto.response.WashingListResponse;
+import com.rushWash.domain.washings.api.dto.response.WashingList;
 import com.rushWash.domain.washings.service.WashingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,7 +22,7 @@ public class WashingRestController {
     private final TokenService tokenService;
 
     @GetMapping
-    public ApiResponse<WashingListResponse> getWashingList(
+    public ApiResponse<List<WashingList>> getWashingList(
             @RequestHeader(name = "Authorization", required = false) String authHeader) {
 
         if (authHeader == null || authHeader.isEmpty()){
@@ -28,9 +30,8 @@ public class WashingRestController {
         }
 
         int userId = tokenService.extractUserIdFromHeader(authHeader);
-        WashingListResponse response = washingService.getWashingListByUserId(userId);
 
-        return ApiResponse.ok(response);
+        return ApiResponse.ok(washingService.getWashingListByUserId(userId));
     }
 
     @GetMapping("/{washingHistoryId}")
