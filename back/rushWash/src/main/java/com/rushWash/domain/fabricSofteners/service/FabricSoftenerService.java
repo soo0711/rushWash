@@ -19,7 +19,7 @@ public class FabricSoftenerService {
     }
 
     public List<FabricSoftener> getFabricSoftenerList(){
-        return fabricSoftenerRepository.findAll();
+        return fabricSoftenerRepository.findAllByOrderByScentCategory();
     }
 
 }
