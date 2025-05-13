@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Header from "../components/common/Header";
+import Header from "../../components/common/Header";
 import { Link, useParams } from "react-router-dom";
 
 const FabricSoftenerResultPage = () => {
@@ -211,20 +211,6 @@ const FabricSoftenerResultPage = () => {
             섬유유연제는 마지막 헹굼 단계에서 넣어주세요. 세제와 함께 사용하면
             효과가 떨어질 수 있습니다.
           </p>
-        </div>
-
-        {/* 홈 버튼 */}
-        <div className="fixed bottom-6 right-6 z-10">
-          <Link
-            to="/"
-            className="block bg-white p-3 rounded-full shadow-lg hover:bg-blue-100 transition-all duration-300 transform hover:scale-105"
-          >
-            <img
-              src={require("../assets/images/home.png")}
-              alt="홈으로"
-              className="w-12 h-12"
-            />
-          </Link>
         </div>
       </div>
     </div>

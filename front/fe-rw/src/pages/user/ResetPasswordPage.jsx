@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Header from "../components/common/Header";
+import Header from "../../components/common/Header";
 import { Link, useNavigate } from "react-router-dom";
 
 const ResetPasswordPage = () => {
@@ -86,17 +86,6 @@ const ResetPasswordPage = () => {
             비밀번호 변경
           </button>
         </form>
-
-        {/* 홈 버튼 */}
-        <div className="absolute bottom-4 right-4">
-          <Link to="/">
-            <img
-              src={require("../assets/images/home.png")}
-              alt="홈으로"
-              className="w-24 h-20"
-            />
-          </Link>
-        </div>
       </div>
     </div>
   );

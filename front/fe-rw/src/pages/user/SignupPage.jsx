@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Header from "../components/common/Header";
+import Header from "../../components/common/Header";
 
 const SignupPage = () => {
   // 폼 상태 관리

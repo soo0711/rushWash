@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Header from "../components/common/Header";
+import Header from "../../components/common/Header";
 import { Link } from "react-router-dom";
 
 const HistoryPage = () => {
@@ -139,17 +139,6 @@ const HistoryPage = () => {
             ))}
           </div>
         )}
-
-        {/* 홈 버튼 */}
-        <div className="absolute bottom-4 right-4">
-          <Link to="/">
-            <img
-              src={require("../assets/images/home.png")}
-              alt="홈으로"
-              className="w-16 h-16"
-            />
-          </Link>
-        </div>
       </div>
     </div>
   );

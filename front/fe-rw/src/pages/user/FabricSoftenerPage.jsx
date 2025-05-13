@@ -1,5 +1,5 @@
 import React from "react";
-import Header from "../components/common/Header";
+import Header from "../../components/common/Header";
 import { Link, useNavigate } from "react-router-dom";
 
 const FabricSoftenerPage = () => {
@@ -53,20 +53,6 @@ const FabricSoftenerPage = () => {
             섬유유연제는 정전기 방지와 섬유 부드러움 유지에 도움을 줄 뿐만
             아니라, 좋아하는 향으로 기분 전환에도 효과적입니다.
           </p>
-        </div>
-
-        {/* 홈 버튼 */}
-        <div className="fixed bottom-6 right-6 z-10">
-          <Link
-            to="/"
-            className="block bg-white p-3 rounded-full shadow-lg hover:bg-blue-100 transition-all duration-300 transform hover:scale-105"
-          >
-            <img
-              src={require("../assets/images/home.png")}
-              alt="홈으로"
-              className="w-12 h-12"
-            />
-          </Link>
         </div>
       </div>
     </div>

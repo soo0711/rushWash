@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Header from "../components/common/Header";
+import Header from "../../components/common/Header";
 
 import { Link } from "react-router-dom";
 
@@ -70,14 +70,7 @@ const FindEmailPage = () => {
             <p className="text-3xl mb-4">회원님의 이메일은</p>
             <p className="text-3xl font-bold mb-6">{foundEmail} 입니다</p>
 
-            <div className="absolute bottom-4 right-4">
-              <Link to="/">
-                <img
-                  src={require("../assets/images/home.png")}
-                  className="w-24 h-20"
-                />
-              </Link>
-            </div>
+            <div className="absolute bottom-4 right-4"></div>
           </div>
         )}
       </div>

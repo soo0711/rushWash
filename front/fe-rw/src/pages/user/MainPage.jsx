@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/common/Header";
+import Header from "../../components/common/Header";
 
 const MainPage = () => {
   const navigate = useNavigate();
@@ -143,7 +143,7 @@ const MainPage = () => {
         <div className="w-full max-w-6xl mx-auto relative">
           <div className="w-full">
             <img
-              src={require("../assets/images/mainbanner.png")}
+              src={require("../../assets/images/mainbanner.png")}
               alt="얼룩 옷을 들고 있는 여성"
               className="w-full h-auto block"
             />
