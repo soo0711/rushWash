@@ -105,7 +105,7 @@ const NearbyLaundryPage = () => {
 
             // 주변 세탁소 검색
             searchNearbyLaundry(lat, lng, newMap);
-          }, 2500);
+          }, 500);
         },
         (error) => {
           console.error("위치 정보를 가져오는데 실패했습니다:", error);
