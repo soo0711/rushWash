@@ -1,5 +1,7 @@
 package com.rushWash.domain.admin.stainRemoval.service;
 
+import com.rushWash.common.response.CustomException;
+import com.rushWash.common.response.ErrorCode;
 import com.rushWash.common.util.JsonManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,17 +33,16 @@ public class AdminStainRemovalService {
         Map<String, List<String>> data = jsonManager.load();
 
         if (!data.containsKey(stain)) {
-            throw new IllegalArgumentException("해당 얼룩이 존재하지 않습니다: " + stain);
+            throw new CustomException(ErrorCode.NOT_FOUND_STAIN);
         }
 
         List<String> methods = new ArrayList<>(data.get(stain));
 
         int index = methods.indexOf(method);
         if (index == -1) {
-            throw new IllegalArgumentException("해당 세탁 방법이 존재하지 않습니다: " + method);
+            throw new CustomException(ErrorCode.NOT_FOUND_METHOD);
         }
 
-        // 해당 인덱스의 값을 새 값으로 변경
         methods.set(index, updatedMethod);
         data.put(stain, methods);
 
@@ -52,9 +53,16 @@ public class AdminStainRemovalService {
     public void deleteStainRemoval(String stain, String method) {
         Map<String, List<String>> data = jsonManager.load();
 
-        if (!data.containsKey(stain)) return;
+        if (!data.containsKey(stain)) {
+            throw new CustomException(ErrorCode.NOT_FOUND_STAIN);
+        }
 
         List<String> methods = new ArrayList<>(data.get(stain));
+
+        if (!methods.contains(method)) {
+            throw new CustomException(ErrorCode.NOT_FOUND_METHOD);
+        }
+
         methods.remove(method);
 
         if (methods.isEmpty()) {
@@ -65,4 +73,5 @@ public class AdminStainRemovalService {
 
         jsonManager.save(data);
     }
+
 }

@@ -9,6 +9,8 @@ public enum ErrorCode {
 
     WASHING_HISTORY_NOT_FOUNT(404, HttpStatus.NOT_FOUND, "세탁 분석 내역을 찾을 수 없습니다."),
     FABRIC_CATEGORY_NOT_FOUND(404, HttpStatus.NOT_FOUND, "향기 카테고리를 찾을 수 없습니다."),
+    NOT_FOUND_STAIN(404, HttpStatus.NOT_FOUND, "해당 얼룩이 존재하지 않습니다."),
+    NOT_FOUND_METHOD(404, HttpStatus.NOT_FOUND, "해당 얼룩에는 세탁 방법이 없습니다."),
     // 403 Forbidden
     Forbidden(403, HttpStatus.FORBIDDEN, "접속 권한이 없습니다."),
     NO_EDIT_PERMISSION(403, HttpStatus.FORBIDDEN, "권한이 없습니다."),
