@@ -90,12 +90,6 @@ const UserTable = ({
               </th>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"
-              >
-                상태
-              </th>
-              <th
-                scope="col"
                 className="px-6 py-3 text-right text-lg font-medium text-gray-500 uppercase tracking-wider"
               >
                 관리
@@ -127,17 +121,6 @@ const UserTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-xl text-gray-500">
                   {user.created_at}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {user.is_verified ? (
-                    <span className="px-2 inline-flex text-lg leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      인증 완료
-                    </span>
-                  ) : (
-                    <span className="px-2 inline-flex text-lg leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                      미인증
-                    </span>
-                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-xl font-medium">
                   <button

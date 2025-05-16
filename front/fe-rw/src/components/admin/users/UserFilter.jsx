@@ -14,24 +14,6 @@ const UserFilter = ({
     <div className="bg-white p-4 rounded-lg shadow-md mb-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-          {/* 상태 필터 */}
-          <div>
-            <label className="block text-lg font-medium text-gray-700 mb-1">
-              상태 필터
-            </label>
-            <select
-              className="text-lg border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              value={filters.status}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value })
-              }
-            >
-              <option value="all">모든 사용자</option>
-              <option value="verified">인증 완료</option>
-              <option value="unverified">미인증</option>
-            </select>
-          </div>
-
           {/* 일괄 작업 */}
           <div className="md:ml-4">
             <label className="block text-lg font-medium text-gray-700 mb-1">
@@ -45,8 +27,6 @@ const UserFilter = ({
               >
                 <option value="">작업 선택</option>
                 <option value="delete">삭제</option>
-                <option value="verify">인증 처리</option>
-                <option value="unverify">인증 취소</option>
               </select>
               <button
                 className={`text-lg px-3 py-2 rounded-r-md ${
