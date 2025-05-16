@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../../components/common/Header";
 import { Link, useParams } from "react-router-dom";
+import axios from "axios";
 
 const FabricSoftenerResultPage = () => {
   const { categoryId } = useParams(); // URL에서 카테고리 ID 받기
@@ -8,137 +9,55 @@ const FabricSoftenerResultPage = () => {
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
 
-  // 목업 카테고리 데이터
-  const mockCategories = [
-    { id: "1", name: "상쾌한 향" },
-    { id: "2", name: "꽃 향" },
-    { id: "3", name: "과일 향" },
-    { id: "4", name: "우디한 향" },
-    { id: "5", name: "파우더 향" },
-    { id: "6", name: "시트러스 향" },
-  ];
+    // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+  // 컴포넌트 마운트 시 데이터 로드
+  // 실제로는 API 호출을 통해 데이터를 가져옴
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-  // 목업 제품 데이터 - 카테고리별 제품
-  const mockProductsByCategory = {
-    1: [
-      {
-        id: 1,
-        brand: "다우니",
-        name: "초고농축 섬유유연제 클린브리즈",
-        imageUrl: null,
-      },
-      {
-        id: 2,
-        brand: "피죤",
-        name: "섬유유연제 레귤러",
-        imageUrl: null,
-      },
-      {
-        id: 3,
-        brand: "스너글",
-        name: "블루 스파클",
-        imageUrl: null,
-      },
-    ],
-    2: [
-      {
-        id: 4,
-        brand: "샤프란",
-        name: "꽃담초 피오니",
-        imageUrl: null,
-      },
-      {
-        id: 5,
-        brand: "다우니",
-        name: "에이프릴 프레쉬",
-        imageUrl: null,
-      },
-      {
-        id: 6,
-        brand: "스너글",
-        name: "벚꽃 향기",
-        imageUrl: null,
-      },
-    ],
-    3: [
-      {
-        id: 7,
-        brand: "샤프란",
-        name: "애플 매직",
-        imageUrl: null,
-      },
-      {
-        id: 8,
-        brand: "피죤",
-        name: "시트러스 가든",
-        imageUrl: null,
-      },
-    ],
-    4: [
-      {
-        id: 9,
-        brand: "르네셀",
-        name: "시크릿 우드",
-        imageUrl: null,
-      },
-      {
-        id: 10,
-        brand: "랑벨",
-        name: "프리미엄 우디향",
-        imageUrl: null,
-      },
-    ],
-    5: [
-      {
-        id: 11,
-        brand: "닥터슈슈",
-        name: "파우더 코튼",
-        imageUrl: null,
-      },
-      {
-        id: 12,
-        brand: "코튼블루",
-        name: "파우더 프레쉬",
-        imageUrl: null,
-      },
-    ],
-    6: [
-      {
-        id: 13,
-        brand: "다우니",
-        name: "레몬그라스 리프레셔",
-        imageUrl: null,
-      },
-      {
-        id: 14,
-        brand: "피죤",
-        name: "시트러스 선샤인",
-        imageUrl: null,
-      },
-    ],
+      // URL 파라미터가 없으면 기본값 "refreshing" (상쾌한 향) 사용
+      const scent = categoryId || "refreshing";
+
+      // GET 방식으로 백엔드 API 호출
+      const response = await axios.get(`/fabric-softeners/${scent}`);
+
+      if (response.data.success) {
+        // scent 키워드 → 사용자 친화적인 한글 카테고리 이름으로 매핑
+        const scentMap = {
+          refreshing: "상쾌한 향",
+          floral: "꽃 향",
+          fruity: "과일 향",
+          woody: "우디한 향",
+          powdery: "파우더 향",
+          citrus: "시트러스 향",
+        };
+
+        // 카테고리 설정
+        setCategory({ id: scent, name: scentMap[scent] || "알 수 없음" });
+
+        // 제품 목록 가져오기
+        const products = response.data.data.map((item, index) => ({
+          id: index + 1,
+          brand: item.brand,
+          name: item.productName,
+          imageUrl: null, // 실제로는 제품 이미지가 있을 것
+        }));
+
+        setProducts(products);
+      } else {
+        console.error("API 응답 에러:", response.data.error);
+      }
+    } catch (error) {
+      console.error("데이터 가져오기 실패:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    // 실제로는 API 호출을 통해 데이터를 가져옴
-    // 여기서는 목업 데이터 사용
-    const loadData = () => {
-      // URL 파라미터가 없으면 기본값 1 (상쾌한 향) 사용
-      const id = categoryId || "1";
-
-      // 카테고리 찾기
-      const selectedCategory = mockCategories.find((c) => c.id === id);
-      setCategory(selectedCategory);
-
-      // 제품 목록 가져오기
-      setProducts(mockProductsByCategory[id] || []);
-
-      setLoading(false);
-    };
-
-    // 데이터 로드 시뮬레이션
-    setTimeout(loadData, 500);
-  }, [categoryId]);
+  fetchData();
+}, [categoryId]);
 
   if (loading) {
     return (
