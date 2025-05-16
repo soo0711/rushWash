@@ -22,6 +22,9 @@ public enum ErrorCode {
     INVALID_VERIFICATION_CODE(400, HttpStatus.BAD_REQUEST, "인증번호가 일치하지 않습니다"),
 
     // 500 Internal Server Error
+    FILE_UPLOAD_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
+    FILE_DELETE_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다."),
+    DIRECTORY_DELETE_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "디렉토리 삭제에 실패했습니다."),
     INTERNAL_SERVER_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류입니다."),
     NO_SUCH_ALGORITHM(500, HttpStatus.INTERNAL_SERVER_ERROR, "지원하지 않는 암호화 알고리즘입니다."),
     DATABASE_ERROR(500, HttpStatus.INTERNAL_SERVER_ERROR, "데이터베이스 처리 중 오류가 발생했습니다."),
