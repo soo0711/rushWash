@@ -30,7 +30,7 @@ public class WashingRestController {
         }
 
         int userId = tokenService.extractUserIdFromHeader(authHeader);
-
+        System.out.print(userId);
         return ApiResponse.ok(washingService.getWashingListByUserId(userId));
     }
 
