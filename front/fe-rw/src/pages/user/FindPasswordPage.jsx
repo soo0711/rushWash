@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import Header from "../../components/common/Header";
 import { Link, useNavigate } from "react-router-dom";
+import { USER_API, PROXY_API, useProxy } from "../../constants/api";
+import axios from "axios";
+
 
 const FindPasswordPage = () => {
   const navigate = useNavigate();
@@ -11,6 +14,12 @@ const FindPasswordPage = () => {
   const [nameErrorMsg, setNameErrorMsg] = useState("");
   const [emailErrorMsg, setEmailErrorMsg] = useState("");
   const [codeErrorMsg, setCodeErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  //API URL 설정
+  const VERIFY_CODE_URL = useProxy ? PROXY_API.VERIFY_CODE : USER_API.VERIFY_CODE;
+  const VERIFY_CODE_CHECK_URL = useProxy ? PROXY_API.VERIFY_CODE_CHECK : USER_API.VERIFY_CODE_CHECK;
 
   // 이름 변경 핸들러
   const handleNameChange = (e) => {
@@ -31,38 +40,110 @@ const FindPasswordPage = () => {
   };
 
   // 인증번호 전송 핸들러
-  const handleSendVerification = (e) => {
-    e.preventDefault();
+  const handleSendVerification = async (e) => {
+  e.preventDefault();
 
-    if (!name) {
-      setNameErrorMsg("이름을 입력하지 않았습니다");
-      return;
+  // 기본 입력값 검증
+  if (!name) {
+    setNameErrorMsg("이름을 입력하지 않았습니다");
+    return;
+  }
+
+  if (!email) {
+    setEmailErrorMsg("이메일을 입력하지 않았습니다");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError(""); // 이전 오류 초기화
+
+    // 인증번호 전송 요청
+    const response = await axios.post(VERIFY_CODE_URL, {
+      name: name,
+      email: email,
+    });
+
+    if (response.data.success && response.data.data.success) {
+      alert("인증번호가 전송되었습니다.");
+      console.log("인증번호:", response.data.data.verifyCode); // 개발 중일 때만 노출
+
+      setIsEmailVerified(true);
+    } else {
+      const msg = response.data.error?.message || "인증번호 전송에 실패했습니다.";
+      setError(msg);
+      alert(msg); 
+    }
+  } catch (err) {
+    console.error("인증번호 전송 오류:", err);
+
+    let msg = "";
+
+    if (err.response) {
+      msg = err.response.data.error?.message || "서버 오류가 발생했습니다.";
+    } else if (err.request) {
+      msg = "서버에 연결할 수 없습니다. 네트워크를 확인해주세요.";
+    } else {
+      msg = "알 수 없는 오류가 발생했습니다.";
     }
 
-    if (!email) {
-      setEmailErrorMsg("이메일을 입력하지 않았습니다");
-      return;
-    }
+    setError(msg);
+    alert(msg);
 
-    console.log("인증번호 전송:", name, email);
-    // 여기에 실제 인증번호 전송 API 호출 로직 추가
-    alert("인증번호가 전송되었습니다.");
-    setIsEmailVerified(true);
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 인증번호 확인 핸들러
-  const handleVerifyCode = (e) => {
-    e.preventDefault();
-    if (!verificationCode) {
-      setCodeErrorMsg("인증번호를 입력하지 않았습니다");
-      return;
+  const handleVerifyCode = async (e) => {
+  e.preventDefault();
+
+  if (!verificationCode) {
+    setCodeErrorMsg("인증번호를 입력하지 않았습니다");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
+
+    // API 요청
+    const response = await axios.post(VERIFY_CODE_CHECK_URL, {
+      email: email,
+      verifyCode: verificationCode,
+    });
+
+    if (response.data.success && response.data.data.success) {
+      alert("인증이 완료되었습니다. 비밀번호 재설정 페이지로 이동합니다.");
+      
+      // 비밀번호 재설정 페이지로 이동하면서 사용자 정보 전달
+      navigate("/reset-password", {
+        state: {
+          name: name,
+          email: email,
+          userId: response.data.data.userId, // 백엔드에서 온 유저 ID
+        },
+      });
+    } else {
+      setError(response.data.error?.message || "인증에 실패했습니다.");
     }
-    console.log("인증번호 확인:", verificationCode);
-    // 여기에 실제 인증번호 확인 API 호출 로직 추가
-    alert("인증이 완료되었습니다. 비밀번호 재설정 페이지로 이동합니다.");
-    // 비밀번호 재설정 페이지로 이동
-    navigate("/reset-password", { state: { name, email } });
-  };
+  } catch (err) {
+    console.error("인증번호 확인 오류:", err);
+
+    if (err.response) {
+      setError(
+        err.response.data.error?.message || "서버 오류가 발생했습니다."
+      );
+    } else if (err.request) {
+      setError("서버에 연결할 수 없습니다. 네트워크를 확인해주세요.");
+    } else {
+      setError("알 수 없는 오류가 발생했습니다.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-gray-50 sandol-font">
@@ -131,6 +212,9 @@ const FindPasswordPage = () => {
                 />
                 {codeErrorMsg && (
                   <p className="text-red-500 text-sm mt-1">{codeErrorMsg}</p>
+                )}
+                {error && (
+                  <p className="text-red-500 text-sm mt-2">{error}</p>
                 )}
               </div>
 

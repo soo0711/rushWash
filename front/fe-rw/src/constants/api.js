@@ -4,7 +4,7 @@
 export const BASE_URL = "http://localhost:8080";
 
 // 설정 (프록시 사용 시)
-export const useProxy = true; // true로 설정하면 상대 경로 사용
+export const useProxy = false; // true로 설정하면 상대 경로 사용
 
 // 사용자 관련 API
 export const USER_API = {
@@ -13,8 +13,8 @@ export const USER_API = {
   SIGN_IN: `${BASE_URL}/users/sign-in`,
   SIGN_OUT: `${BASE_URL}/users/sign-out`,
   DUPLICATE_CHECK: `${BASE_URL}/users/duplicate-check`,
-  VERIFY_CODE_GET: `${BASE_URL}/users/verify-code`,
-  VERIFY_CODE_POST: `${BASE_URL}/users/verify-code`,
+  VERIFY_CODE_CHECK: `${BASE_URL}/users/verify-code/check`,
+  VERIFY_CODE: `${BASE_URL}/users/verify-code`,
   PASSWORD_UPDATE: `${BASE_URL}/users/password`,
   EMAIL_FIND: `${BASE_URL}/users/email`,
 };
@@ -38,7 +38,7 @@ export const ADMIN_FABRIC_SOFTENER_API = {
 // 세탁 관련 API
 export const WASHING_API = {
   GET_BY_ID: `${BASE_URL}/washings/{washingHistoryId}`,
-  UPDATE_BY_ID: `${BASE_URL}/washings/{washingHistoryId}`,
+  UPDATE_BY_ID: `${BASE_URL}/washings`,
   GET_ALL: `${BASE_URL}/washings`,
 };
 

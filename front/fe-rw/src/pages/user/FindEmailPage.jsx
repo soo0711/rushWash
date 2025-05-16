@@ -57,12 +57,8 @@ const FindEmailPage = () => {
       setError("");
 
       // API 요청
-      const response = await axios.get(EMAIL_FIND_URL, {
-        params: {
-          arg0: {
-            phoneNumber: phoneNumber,
-          },
-        },
+      const response = await axios.post(EMAIL_FIND_URL, {
+        phoneNumber: phoneNumber
       });
 
       // 응답 처리
