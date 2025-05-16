@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Header from "../../components/common/Header";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
@@ -8,23 +8,22 @@ const FabricSoftenerResultPage = () => {
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
+  // 컴포넌트 최상위 레벨에 useRef 선언
+  const alertShownRef = useRef(false);
 
-    // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-  // 컴포넌트 마운트 시 데이터 로드
-  // 실제로는 API 호출을 통해 데이터를 가져옴
+
+useEffect(() => {
+  // 새로운 categoryId가 들어올 때마다 ref를 초기화
+  alertShownRef.current = false;
+  
   const fetchData = async () => {
     try {
       setLoading(true);
-
-      // URL 파라미터가 없으면 기본값 "refreshing" (상쾌한 향) 사용
       const scent = categoryId || "refreshing";
-
-      // GET 방식으로 백엔드 API 호출
       const response = await axios.get(`/fabric-softeners/${scent}`);
 
+      // 성공 응답일 때
       if (response.data.success) {
-        // scent 키워드 → 사용자 친화적인 한글 카테고리 이름으로 매핑
         const scentMap = {
           refreshing: "상쾌한 향",
           floral: "꽃 향",
@@ -34,23 +33,66 @@ const FabricSoftenerResultPage = () => {
           citrus: "시트러스 향",
         };
 
-        // 카테고리 설정
         setCategory({ id: scent, name: scentMap[scent] || "알 수 없음" });
 
-        // 제품 목록 가져오기
         const products = response.data.data.map((item, index) => ({
           id: index + 1,
           brand: item.brand,
           name: item.productName,
-          imageUrl: null, // 실제로는 제품 이미지가 있을 것
+          imageUrl: null,
         }));
 
         setProducts(products);
       } else {
-        console.error("API 응답 에러:", response.data.error);
+        // 여기엔 success가 false인 정상 응답 처리
+        const errorMsg = response.data.error?.message || "알 수 없는 오류가 발생했습니다.";
+        if (!alertShownRef.current) {
+          alert(`에러 발생: ${errorMsg}`);
+          alertShownRef.current = true;
+          window.history.back();
+        }
+
+        setProducts([]);
+        setCategory({ id: scent, name: "알 수 없음" });
       }
     } catch (error) {
-      console.error("데이터 가져오기 실패:", error);
+      // axios 에러 처리
+      if (error.response) {
+        // 서버가 응답했지만 오류 상태코드일 때
+        if (error.response.status === 404) {
+          // 404 Not Found 에러 처리
+          if (!alertShownRef.current) {
+            alert("해당 향기 카테고리를 찾을 수 없습니다. 다시 선택해주세요.");
+            alertShownRef.current = true;
+            window.history.back();
+          }
+        } else {
+          // 그 외 상태코드 에러 처리
+          if (!alertShownRef.current) {
+            alert(`서버 에러: ${error.response.status} - ${error.response.statusText}`);
+            alertShownRef.current = true;
+            window.history.back();
+          }
+        }
+      } else if (error.request) {
+        // 요청은 되었으나 응답이 없는 경우 (네트워크 문제 등)
+        console.error("서버 또는 네트워크 에러:", error);
+        if (!alertShownRef.current) {
+          alert("서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
+          alertShownRef.current = true;
+          window.history.back();
+        }
+      } else {
+        // 요청 설정 중 발생한 에러
+        if (!alertShownRef.current) {
+          alert("알 수 없는 오류가 발생했습니다.");
+          alertShownRef.current = true;
+          window.history.back();
+        }
+      }
+
+      setProducts([]);
+      setCategory({ id: "error", name: "오류" });
     } finally {
       setLoading(false);
     }
