@@ -39,7 +39,7 @@ useEffect(() => {
           id: index + 1,
           brand: item.brand,
           name: item.productName,
-          imageUrl: null,
+          imageUrl: item.imageUrl,
         }));
 
         setProducts(products);
@@ -145,20 +145,24 @@ useEffect(() => {
               key={product.id}
               className="bg-white p-5 rounded-lg shadow-md flex items-center hover:shadow-lg transition-shadow duration-200"
             >
-              {/* 제품 이미지 (실제로는 제품 이미지가 있을 것) */}
-              <div className="w-24 h-24 bg-blue-100 rounded-md flex items-center justify-center mr-4 flex-shrink-0">
-                <span className="text-blue-500 text-xs text-center">
-                  제품 이미지
-                </span>
+              {/* 제품 이미지 */}
+              <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 mr-4">
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-500 text-xs text-center">이미지 없음</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex-grow">
-                <p className="text-blue-600 text-lg font-medium">
-                  {product.brand}
-                </p>
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {product.name}
-                </h3>
+                <p className="text-blue-600 text-lg font-medium">{product.brand}</p>
+                <h3 className="text-xl font-semibold text-gray-800">{product.name}</h3>
               </div>
             </div>
           ))}
