@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record WashingListResponse(
         int washingHistoryId,
         int userId,
+        String userEmail,
         AnalysisType analysisType,
         String stain_image_url,
         String label_image_url,

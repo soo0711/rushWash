@@ -54,7 +54,8 @@ public interface WashingRepository extends JpaRepository<WashingHistory, Integer
     @Query("""
     SELECT new com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse(
         wh.id,
-        wh.userId,
+        u.id,
+        u.email,
         wh.analysisType,
         wh.stainImageUrl,
         wh.labelImageUrl,
@@ -65,15 +66,16 @@ public interface WashingRepository extends JpaRepository<WashingHistory, Integer
     )
     FROM WashingHistory wh
     JOIN WashingResult wr ON wr.washingHistory.id = wh.id
+    JOIN User u ON u.id = wh.userId
     ORDER BY wh.createdAt DESC
-    
-            """)
+    """)
     List<WashingListResponse> getWashingList();
 
     @Query("""
     SELECT new com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse(
         wh.id,
-        wh.userId,
+        u.id,
+        u.email,
         wh.analysisType,
         wh.stainImageUrl,
         wh.labelImageUrl,
@@ -84,9 +86,9 @@ public interface WashingRepository extends JpaRepository<WashingHistory, Integer
     )
     FROM WashingHistory wh
     JOIN WashingResult wr ON wr.washingHistory.id = wh.id
+    JOIN User u ON u.id = wh.userId
     WHERE wh.estimation = true
     ORDER BY wh.createdAt DESC
-
-            """)
+    """)
     List<WashingListResponse> getWashingGoodList();
 }
