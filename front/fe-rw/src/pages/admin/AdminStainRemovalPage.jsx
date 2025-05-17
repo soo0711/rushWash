@@ -68,50 +68,58 @@ const AdminStainRemovalPage = () => {
 
   // 얼룩 세탁법 데이터 가져오기 (조회 API)
   const fetchStainRemovals = async () => {
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      console.log("얼룩 세탁법 목록 요청 URL:", API_URL);
-      const response = await apiClient.get(API_URL);
-      console.log("얼룩 세탁법 목록 응답:", response.data);
+  try {
+    console.log("얼룩 세탁법 목록 요청 URL:", API_URL);
+    const response = await apiClient.get(API_URL);
+    console.log("얼룩 세탁법 목록 응답:", response.data);
 
-      if (response.data && response.data.success) {
-        // API 응답에서 데이터 추출
-        const apiData = response.data.data || [];
+    if (response.data && response.data.success) {
+      const dataObj = response.data.data || {};
 
-        // 데이터 형식 정리
-        const formattedData = apiData.map((item, index) => ({
-          id: index + 1, // API에 ID가 없을 경우 임시 ID 부여
-          stain: item.additionalProp1 || "",
-          method: item.additionalProp2 || "",
-          detail: item.additionalProp3 || "",
-          created_at: new Date().toISOString().split("T")[0], // 생성일 임시 설정
-          updated_at: new Date().toISOString().split("T")[0], // 수정일 임시 설정
+      const formattedData = Object.entries(dataObj).flatMap(([stain, methods], idx) => {
+        return methods.map((method, methodIdx) => ({
+          id: (idx+1) * 100 + methodIdx + 1,
+          stain: stain,
+          method: method,
+          detail: "", // 상세 설명 필요 시 여기에 매핑
+          created_at: new Date().toISOString().split("T")[0],
+          updated_at: new Date().toISOString().split("T")[0],
         }));
+      });
 
-        setStainRemovals(formattedData);
+      setStainRemovals(formattedData);
 
-        // 얼룩 종류 추출 (중복 제거)
-        const stainTypesList = [
-          ...new Set(formattedData.map((item) => item.stain)),
-        ]
-          .filter(Boolean)
-          .map((name, index) => ({ id: index + 1, name }));
+      // 얼룩 종류 추출
+      const stainTypesList = Object.keys(dataObj).map((name, index) => ({
+        id: index + 1,
+        name,
+      }));
 
-        setStainTypes(stainTypesList);
-      } else {
-        throw new Error(
-          response.data.error?.message || "데이터를 불러오는데 실패했습니다."
-        );
-      }
-    } catch (err) {
-      console.error("얼룩 세탁법 데이터 로드 중 오류 발생:", err);
-      setError(handleApiError(err));
-    } finally {
-      setLoading(false);
+      setStainTypes(stainTypesList);
+    } else {
+      throw new Error(
+        response.data.error?.message || "데이터를 불러오는데 실패했습니다."
+      );
     }
-  };
+  } catch (err) {
+    console.error("얼룩 세탁법 데이터 로드 중 오류 발생:", err);
+
+    if (err.response) {
+      setError(
+        err.response.data.error?.message || "서버 오류가 발생했습니다."
+      );
+    } else if (err.request) {
+      setError("서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.");
+    } else {
+      setError("데이터 요청 중 오류가 발생했습니다.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   // 필터링된 데이터
   const filteredStainRemovals = stainRemovals.filter((item) => {
@@ -162,69 +170,83 @@ const AdminStainRemovalPage = () => {
 
   // 항목 저장 (추가 또는 수정)
   const handleSave = async () => {
-    if (
-      !formData.stain ||
-      (currentStainRemoval ? !formData.updatedMethod : !formData.method)
-    ) {
-      alert("모든 필드를 입력해주세요.");
-      return;
-    }
+  if (
+    !formData.stain ||
+    (currentStainRemoval ? !formData.updatedMethod : !formData.method)
+  ) {
+    alert("모든 필드를 입력해주세요.");
+    return;
+  }
 
-    try {
-      if (currentStainRemoval) {
-        // 수정 API 호출 (PATCH)
-        console.log("얼룩 세탁법 수정 요청 데이터:", {
-          stain: formData.stain,
-          method: formData.method,
-          updatedMethod: formData.updatedMethod,
-        });
+  try {
+    if (currentStainRemoval) {
+      // 수정 요청 (PATCH)
+      console.log("얼룩 세탁법 수정 요청 데이터:", {
+        stain: formData.stain,
+        method: formData.method,
+        updatedMethod: formData.updatedMethod,
+      });
 
-        const response = await apiClient.patch(UPDATE_URL, {
-          stain: formData.stain,
-          method: formData.method,
-          updatedMethod: formData.updatedMethod,
-        });
+      const response = await apiClient.patch(UPDATE_URL, {
+        stain: formData.stain,
+        method: formData.method,
+        updatedMethod: formData.updatedMethod,
+      });
 
-        console.log("얼룩 세탁법 수정 응답:", response.data);
+      console.log("얼룩 세탁법 수정 응답:", response.data);
 
-        if (response.data && response.data.success) {
-          alert("얼룩 세탁법이 성공적으로 수정되었습니다.");
-          closeModal();
-          fetchStainRemovals(); // 데이터 새로고침
-        } else {
-          throw new Error(
-            response.data.error?.message || "얼룩 세탁법 수정에 실패했습니다."
-          );
-        }
+      if (response.data && response.data.success) {
+        alert(response.data.data || "수정 완료되었습니다.");
+        closeModal();
+        fetchStainRemovals();
       } else {
-        // 추가 API 호출 (POST)
-        console.log("얼룩 세탁법 추가 요청 데이터:", {
-          stain: formData.stain,
-          method: formData.method,
-        });
-
-        const response = await apiClient.post(CREATE_URL, {
-          stain: formData.stain,
-          method: formData.method,
-        });
-
-        console.log("얼룩 세탁법 추가 응답:", response.data);
-
-        if (response.data && response.data.success) {
-          alert("새 얼룩 세탁법이 성공적으로 추가되었습니다.");
-          closeModal();
-          fetchStainRemovals(); // 데이터 새로고침
-        } else {
-          throw new Error(
-            response.data.error?.message || "얼룩 세탁법 추가에 실패했습니다."
-          );
-        }
+        throw new Error(
+          response.data.error?.message || "얼룩 세탁법 수정에 실패했습니다."
+        );
       }
-    } catch (err) {
-      console.error("얼룩 세탁법 저장 중 오류 발생:", err);
-      alert("오류가 발생했습니다: " + handleApiError(err));
+    } else {
+      // 추가 요청 (POST)
+      console.log("얼룩 세탁법 추가 요청 데이터:", {
+        stain: formData.stain,
+        method: formData.method,
+      });
+
+      const response = await apiClient.post(CREATE_URL, {
+        stain: formData.stain,
+        method: formData.method,
+      });
+
+      console.log("얼룩 세탁법 추가 응답:", response.data);
+
+      if (response.data && response.data.success) {
+        alert(response.data.data || "추가 완료되었습니다.");
+        closeModal();
+        fetchStainRemovals();
+      } else {
+        throw new Error(
+          response.data.error?.message || "얼룩 세탁법 추가에 실패했습니다."
+        );
+      }
     }
-  };
+  } catch (err) {
+    console.error("얼룩 세탁법 저장 중 오류 발생:", err);
+
+    if (err.response) {
+      setError(
+        err.response.data.error?.message ||
+        "서버에서 오류가 발생했습니다."
+      );
+      alert("오류: " + (err.response.data.error?.message || "처리 중 오류"));
+    } else if (err.request) {
+      alert("서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.");
+    } else {
+      alert("요청 중 오류가 발생했습니다.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // 항목 삭제 API 호출 (DELETE)
   const handleDelete = async (stainInfo) => {
