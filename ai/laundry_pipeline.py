@@ -9,11 +9,18 @@ import torch
 import sys
 
 # ───── 모델 경로 및 가이드 경로 설정 ─────
-BASE_DIR = "."
-STAIN_MODEL_PATH = f"{BASE_DIR}/stain/stain_cls.pt"
-LABEL_MODEL_PATH = f"{BASE_DIR}/symbol/laundry_labels_cls.pt"
-STAIN_GUIDE_PATH = f"{BASE_DIR}/stain/stain_washing_guidelines.json"
-LABEL_GUIDE_PATH = f"{BASE_DIR}/symbol/label_symbol_guide.json"
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # 현재 파일 경로 기준
+STAIN_MODEL_PATH = os.path.join(BASE_DIR, "stain", "stain_cls.pt")
+LABEL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
+STAIN_GUIDE_PATH = os.path.join(BASE_DIR, "stain", "stain_washing_guidelines.json")
+LABEL_GUIDE_PATH = os.path.join(BASE_DIR, "symbol", "label_symbol_guide.json")
+#BASE_DIR = "."
+#STAIN_MODEL_PATH = f"{BASE_DIR}/stain/stain_cls.pt"
+#LABEL_MODEL_PATH = f"{BASE_DIR}/symbol/laundry_labels_cls.pt"
+#STAIN_GUIDE_PATH = f"{BASE_DIR}/stain/stain_washing_guidelines.json"
+#LABEL_GUIDE_PATH = f"{BASE_DIR}/symbol/label_symbol_guide.json"
 
 # ───── 클래스 정의 및 threshold 설정 ─────
 STAIN_CLASSES = [
