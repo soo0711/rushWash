@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record AnalysisOnlyStainResponse(
+        @JsonProperty("detected_stain")
         DetectedStain detectedStain,
+        @JsonProperty("washing_instructions")
         List<WashingInstruction> washingInstructions
 ) {
     public record DetectedStain(

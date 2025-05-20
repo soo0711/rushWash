@@ -16,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,7 @@ public class AnalysisService {
     private final FileManagerService fileManagerService;
     private final ObjectMapper objectMapper;
     @Value("${file.upload-path}")
-    private final String uploadPath;
+    private String uploadPath;
     @Value("${python.script-path}")
     private String pythonScriptPath;
 
@@ -58,7 +60,11 @@ public class AnalysisService {
 
             // WashingHistory와 WashingResult 저장
             WashingHistory washingHistory = washingService.addWashingHistory(userId, AnalysisType.STAIN, savedFilePath, false);
-            for (AnalysisOnlyStainResponse.WashingInstruction instruction : response.washingInstructions()) {
+            List<AnalysisOnlyStainResponse.WashingInstruction> instructions = response.washingInstructions();
+
+            if (instructions == null) instructions = Collections.emptyList();
+
+            for (var instruction : instructions) {
                 washingService.addWashingResult(
                         washingHistory,
                         instruction.clazz(),       // 분석 카테고리
