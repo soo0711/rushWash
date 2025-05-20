@@ -1,8 +1,6 @@
 package com.rushWash.domain.washings.domain.repository;
 
 import com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse;
-import com.rushWash.domain.users.domain.User;
-import com.rushWash.domain.washings.api.dto.request.WashingEstimationRequest;
 import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
 import com.rushWash.domain.washings.api.dto.response.WashingList;
 import com.rushWash.domain.washings.domain.WashingHistory;
@@ -12,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface WashingRepository extends JpaRepository<WashingHistory, Integer> {
+public interface WashingHistoryRepository extends JpaRepository<WashingHistory, Integer> {
     @Query("""
     SELECT new com.rushWash.domain.washings.api.dto.response.WashingList(
         wh.id,
