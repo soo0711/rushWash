@@ -33,19 +33,14 @@ public class AnalysisService {
 
 
     public AnalysisOnlyStainResponse getStainAnalysis(int userId, MultipartFile file){
-        // 1. 로컬에 저장
-        String savedFilePath = fileManagerService.saveFile(userId, file);
-        if (savedFilePath == null) {
-            throw new CustomException(ErrorCode.FILE_SAVE_FAILED);
-        }
 
-        // 2. 실제 저장된 파일의 절대 경로
-        String absoluteImagePath = uploadPath + savedFilePath;
+        // 1. 실제 저장된 파일의 절대 경로 저장 후 불러오기
+        String absoluteImagePath = saveFileAndGetAbsolutePath(userId, file);
 
-        // 3. 파이썬 불러오기
+        // 2. 파이썬 불러오기
         String pythonOutput = executePythonScript("stain_only", absoluteImagePath);
 
-        // 4. JSON 응답값
+        // 3. JSON 응답값
         try {
             // JSON 문자열의 시작 위치 찾기 ('{' 문자가 나오는 위치)
             int jsonStart = pythonOutput.indexOf('{');
@@ -123,5 +118,15 @@ public class AnalysisService {
         } catch (IOException | InterruptedException e) {
             throw new CustomException(ErrorCode.PYTHON_SCRIPT_EXECUTION_FAILED);
         }
+    }
+
+    private String saveFileAndGetAbsolutePath(int userId, MultipartFile file) {
+        // 1. 로컬에 저장
+        String savedFilePath = fileManagerService.saveFile(userId, file);
+        if (savedFilePath == null) {
+            throw new CustomException(ErrorCode.FILE_SAVE_FAILED);
+        }
+        // 2. 절대경로 return
+        return uploadPath + savedFilePath;
     }
 }
