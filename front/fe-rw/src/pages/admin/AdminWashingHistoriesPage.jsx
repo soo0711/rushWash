@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
+import { ADMIN_WASHINGS_API, PROXY_API, useProxy } from "../../constants/api";
+import axios from "axios";
 
 const AdminWashingHistoriesPage = () => {
   // 상태 관리
@@ -20,123 +22,72 @@ const AdminWashingHistoriesPage = () => {
     direction: "desc",
   });
 
+  //API URL 설정
+  const GET_ALL = useProxy ? PROXY_API.GET_ALL : ADMIN_WASHINGS_API.GET_ALL;
+  const DELETE = useProxy ? PROXY_API.DELETE : ADMIN_WASHINGS_API.DELETE;
+  const GET_GOOD = useProxy ? PROXY_API.GET_GOOD : ADMIN_WASHINGS_API.GET_GOOD;
+  
+
   // 초기 데이터 로드 (실제로는 API 호출)
   useEffect(() => {
-    // 로딩 상태 설정
+  const fetchData = async () => {
     setLoading(true);
+    try {
+      const response = await axios.get(GET_ALL);
+      if (response.data.success) {
+        const apiData = response.data.data.map((item) => ({
+          id: item.washingHistoryId,
+          user_id: item.userId,
+          user_email : item.userEmail,
+          analysis_type: item.analysisType === "LABEL" ? "섬유 분석" : "얼룩 분석",
+          stain_image_url: item.stain_image_url,
+          label_image_url: item.label_image_url,
+          estimation: item.estimation,
+          created_at: item.createdAt.split("T")[0],
+          updated_at: item.createdAt.split("T")[0],
+          result: {
+            stain_category: item.stainCategory,
+            analysis: item.analysis,
+          },
+          user: { id: item.userId, name: `${item.userEmail}`, phone_number: "010-0000-0000" },
+        }));
+        setWashingHistories(apiData);
+      } else {
+        console.error(response.data.error?.message || "불러오기 실패");
+      }
+    } catch (err) {
+      console.error("API 호출 오류:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // 세탁 내역 데이터
-    const dummyWashingHistories = [
-      {
-        id: 1,
-        user_id: 1,
-        analysis_type: "얼룩 분석",
-        stain_image_url: "/api/placeholder/400/320",
-        label_image_url: "/api/placeholder/400/320",
-        estimation: true,
-        created_at: "2025-05-10",
-        updated_at: "2025-05-10",
-        result: {
-          id: 1,
-          washing_history_id: 1,
-          stain_category: "음식물",
-          analysis: "커피 얼룩으로 판단됩니다. 산소계 표백제가 효과적입니다.",
-        },
-        user: { id: 1, name: "김민지", phone_number: "010-1234-5678" },
-      },
-      {
-        id: 2,
-        user_id: 2,
-        analysis_type: "얼룩 분석",
-        stain_image_url: "/api/placeholder/400/320",
-        label_image_url: "/api/placeholder/400/320",
-        estimation: true,
-        created_at: "2025-05-08",
-        updated_at: "2025-05-08",
-        result: {
-          id: 2,
-          washing_history_id: 2,
-          stain_category: "기름",
-          analysis:
-            "기름 얼룩으로 판단됩니다. 주방 세제로 전처리가 필요합니다.",
-        },
-        user: { id: 2, name: "이준호", phone_number: "010-2345-6789" },
-      },
-      {
-        id: 3,
-        user_id: 3,
-        analysis_type: "섬유 분석",
-        stain_image_url: "/api/placeholder/400/320",
-        label_image_url: "/api/placeholder/400/320",
-        estimation: false,
-        created_at: "2025-05-05",
-        updated_at: "2025-05-05",
-        result: {
-          id: 3,
-          washing_history_id: 3,
-          stain_category: "섬유",
-          analysis: "면 소재로 판별됩니다. 일반 세탁 코스로 세탁하세요.",
-        },
-        user: { id: 3, name: "박서연", phone_number: "010-3456-7890" },
-      },
-      {
-        id: 4,
-        user_id: 1,
-        analysis_type: "얼룩 분석",
-        stain_image_url: "/api/placeholder/400/320",
-        label_image_url: "/api/placeholder/400/320",
-        estimation: true,
-        created_at: "2025-05-01",
-        updated_at: "2025-05-01",
-        result: {
-          id: 4,
-          washing_history_id: 4,
-          stain_category: "잉크",
-          analysis: "잉크 얼룩으로 판단됩니다. 알코올로 전처리가 필요합니다.",
-        },
-        user: { id: 1, name: "김민지", phone_number: "010-1234-5678" },
-      },
-      {
-        id: 5,
-        user_id: 4,
-        analysis_type: "섬유 분석",
-        stain_image_url: "/api/placeholder/400/320",
-        label_image_url: "/api/placeholder/400/320",
-        estimation: false,
-        created_at: "2025-04-28",
-        updated_at: "2025-04-28",
-        result: {
-          id: 5,
-          washing_history_id: 5,
-          stain_category: "섬유",
-          analysis:
-            "울/캐시미어로 판별됩니다. 울 전용 세제를 사용하고 찬물로 손세탁하세요.",
-        },
-        user: { id: 4, name: "최도윤", phone_number: "010-4567-8901" },
-      },
-    ];
+  fetchData();
+}, []);
 
-    // 분석 유형 데이터
-    const dummyAnalysisTypes = [
-      { id: 1, name: "얼룩 분석" },
-      { id: 2, name: "섬유 분석" },
-      { id: 3, name: "최적 세제 추천" },
-    ];
+  const handleDelete = async (historyId) => {
+    if (!window.confirm("정말로 이 분석 내역을 삭제하시겠습니까?")) return;
 
-    // 사용자 데이터
-    const dummyUsers = [
-      { id: 1, name: "김민지", phone_number: "010-1234-5678" },
-      { id: 2, name: "이준호", phone_number: "010-2345-6789" },
-      { id: 3, name: "박서연", phone_number: "010-3456-7890" },
-      { id: 4, name: "최도윤", phone_number: "010-4567-8901" },
-    ];
+    try {
+      const response = await axios.delete(DELETE, {
+        data: { washingHistoryId: historyId },
+      });
 
-    setWashingHistories(dummyWashingHistories);
-    setAnalysisTypes(dummyAnalysisTypes);
-    setUsers(dummyUsers);
-    setLoading(false);
-  }, []);
-
+      if (response.data && response.data.success) {
+        alert(response.data.data || "삭제 완료되었습니다.");
+        setWashingHistories((prev) =>
+          prev.filter((item) => item.id !== historyId)
+        );
+      } else {
+        alert(
+          response.data.error?.message || "분석 내역 삭제에 실패했습니다."
+        );
+      }
+    } catch (err) {
+      console.error("삭제 중 오류 발생:", err);
+      alert("서버 오류로 삭제하지 못했습니다.");
+    }
+  };
   // 필터링된 데이터
   const filteredHistories = washingHistories.filter((item) => {
     const matchesSearch =
@@ -372,7 +323,7 @@ const AdminWashingHistoriesPage = () => {
                     onClick={() => handleSort("user")}
                   >
                     <div className="flex items-center">
-                      사용자 {getSortIcon("user")}
+                      사용자 이메일 {getSortIcon("user")}
                     </div>
                   </th>
                   <th
@@ -459,13 +410,19 @@ const AdminWashingHistoriesPage = () => {
                       {history.created_at}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => openDetailModal(history)}
-                        className="text-indigo-600 hover:text-indigo-900"
-                      >
-                        <i className="fas fa-eye"></i> 상세
-                      </button>
-                    </td>
+                    <button
+                      onClick={() => openDetailModal(history)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      <i className="fas fa-eye"></i> 상세
+                    </button>
+                    <button
+                      onClick={() => handleDelete(history.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <i className="fas fa-trash"></i> 삭제
+                    </button>
+                  </td>
                   </tr>
                 ))}
                 {filteredHistories.length === 0 && (
@@ -563,7 +520,7 @@ const AdminWashingHistoriesPage = () => {
                         <div>{currentHistory.analysis_type}</div>
                       </div>
                       <div className="text-sm">
-                        <div className="font-medium text-gray-500">사용자</div>
+                        <div className="font-medium text-gray-500">사용자 이메일</div>
                         <div>{currentHistory.user.name}</div>
                       </div>
                       <div className="text-sm">

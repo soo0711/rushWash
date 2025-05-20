@@ -81,7 +81,7 @@ public class FileManagerService {
     }
 
     // 단일 파일
-    public String saveFile(String userId, MultipartFile file) {
+    public String saveFile(int userId, MultipartFile file) {
         String directoryName = userId + "_" + System.currentTimeMillis();
         String filePath = uploadPath + "/images/" + directoryName;
 

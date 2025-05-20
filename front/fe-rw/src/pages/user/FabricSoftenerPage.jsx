@@ -6,12 +6,12 @@ const FabricSoftenerPage = () => {
   const navigate = useNavigate();
   // 섬유유연제 향 카테고리 목업 데이터
   const scentCategories = [
-    { id: 1, name: "상쾌한 향", icon: "🌊" },
-    { id: 2, name: "꽃 향", icon: "🌸" },
-    { id: 3, name: "과일 향", icon: "🍎" },
-    { id: 4, name: "우디한 향", icon: "🌲" },
-    { id: 5, name: "파우더 향", icon: "✨" },
-    { id: 6, name: "시트러스 향", icon: "🍋" },
+    { id: "refreshing", name: "상쾌한 향", icon: "🌊" },
+    { id: "floral", name: "꽃 향", icon: "🌸" },
+    { id: "fruity", name: "과일 향", icon: "🍎" },
+    { id: "woody", name: "우디한 향", icon: "🌲" },
+    { id: "powdery", name: "파우더 향", icon: "✨" },
+    { id: "citrus", name: "시트러스 향", icon: "🍋" },
   ];
 
   const handleCategorySelect = (categoryId) => {

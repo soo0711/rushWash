@@ -26,6 +26,7 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminFabricSoftenerPage from "./pages/admin/AdminFabricSoftenerPage";
 import AdminWashingHistoriesPage from "./pages/admin/AdminWashingHistoriesPage";
 import AdminAIPage from "./pages/admin/AdminAIPage";
+import AdminStainRemovalPage from "./pages/admin/AdminStainRemovalPage";
 
 function App() {
   return (
@@ -74,6 +75,10 @@ function App() {
             element={<AdminWashingHistoriesPage />}
           />
           <Route path="/admin/ai" element={<AdminAIPage />} />
+          <Route
+            path="/admin/stain-removal"
+            element={<AdminStainRemovalPage />}
+          />
         </Routes>
       </div>
     </Router>

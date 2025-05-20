@@ -54,10 +54,10 @@ public class UserRestController {
         return ApiResponse.ok("사용 가능 합니다.");
     }
 
-    @GetMapping("/email")
+    @PostMapping("/email")
     public ApiResponse<UserEmailFindResponse> userEmailFind(
             @RequestBody UserEmailFindRequest request){
-
+        System.out.println("전화번호: " + request.phoneNumber());
         UserEmailFindResponse response = userService.getEmailByPhoneNumber(request);
 
         return ApiResponse.ok(response);
@@ -72,7 +72,7 @@ public class UserRestController {
     }
 
 
-    @GetMapping("/verify-code")
+    @PostMapping("/verify-code/check")
     public ApiResponse<UserVerifyCodeResponse> userVerifyCode(
             @RequestBody UserVerifyCodeRequest request){
         //인증번호 인증 성공

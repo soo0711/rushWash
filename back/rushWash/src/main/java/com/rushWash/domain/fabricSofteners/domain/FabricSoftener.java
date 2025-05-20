@@ -22,6 +22,8 @@ public class FabricSoftener {
     private String brand;
     @Column(name = "product_name")
     private String productName;
+    @Column(name = "image_url")
+    private String imageUrl;
     @Column(name = "created_at", updatable = false)
     @UpdateTimestamp
     private LocalDateTime createdAt;

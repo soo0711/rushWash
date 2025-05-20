@@ -40,8 +40,17 @@ public enum ErrorCode {
     EXPIRED_TOKEN(401, HttpStatus.UNAUTHORIZED, "JWT 토큰이 만료되었습니다."),
     TOKEN_USERID_EXTRACTION_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "JWT 토큰에서 사용자 ID 추출 중 오류가 발생했습니다."),
     TOKEN_EMAIL_EXTRACTION_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "JWT 토큰에서 이메일 추출 중 오류가 발생했습니다."),
-    JSON_CONVERT_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "JWT 생성 중 JSON 변환 오류가 발생했습니다.");
+    JSON_CONVERT_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "JWT 생성 중 JSON 변환 오류가 발생했습니다."),
 
+    // 파일 관련 에러 코드
+    FILE_SAVE_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
+
+    // 파이썬 실행 관련 에러 코드
+    PYTHON_SCRIPT_EXECUTION_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파이썬 스크립트 실행에 실패했습니다."),
+    PYTHON_SCRIPT_OUTPUT_INVALID(500, HttpStatus.INTERNAL_SERVER_ERROR, "파이썬 스크립트 출력이 유효하지 않습니다."),
+
+    // JSON 파싱 관련 에러 코드
+    JSON_PARSING_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "JSON 파싱에 실패했습니다.");
 
 
     private final Integer code;

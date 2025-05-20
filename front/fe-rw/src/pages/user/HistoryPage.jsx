@@ -1,72 +1,106 @@
 import React, { useState, useEffect } from "react";
 import Header from "../../components/common/Header";
 import { Link } from "react-router-dom";
+import { WASHING_API, PROXY_API, useProxy } from "../../constants/api";
+import axios from "axios";
 
 const HistoryPage = () => {
   // 분석 내역 목록 상태
   const [historyItems, setHistoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  //API URL 설정
+  const WASHING_GET_ALL = useProxy ? PROXY_API.GET_ALL : WASHING_API.GET_ALL;
+  const UPDATE_BY_ID = useProxy ? PROXY_API.UPDATE_BY_ID : WASHING_API.UPDATE_BY_ID;
 
   // 컴포넌트 마운트 시 분석 내역 데이터 불러오기
   useEffect(() => {
-    // 예시 데이터로 대체
-    const fetchHistory = async () => {
-      try {
-        // 임시 목업 데이터
-        const mockData = [
-          {
-            id: 1,
-            date: "2025-04-23",
-            type: "얼룩",
-            result: "커피 얼룩, 중성세제와 미온수로 세탁 권장",
-            imageUrl: null, // 실제로는 이미지 URL
-            feedback: null, // null은 피드백을 아직 안한 상태
-          },
-          {
-            id: 2,
-            date: "2025-04-20",
-            type: "라벨",
-            result: "드라이클리닝 필요, 찬물 손세탁 가능",
-            imageUrl: null,
-            feedback: "like", // 이미 좋아요를 누른 상태
-          },
-          {
-            id: 3,
-            date: "2025-04-18",
-            type: "얼룩과 라벨",
-            result: "와인 얼룩, 드라이클리닝 권장",
-            imageUrl: null,
-            feedback: "dislike", // 이미 별로예요를 누른 상태
-          },
-        ];
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
 
-        setHistoryItems(mockData);
-        setLoading(false);
-      } catch (error) {
-        console.error("내역을 불러오는데 실패했습니다:", error);
-        setLoading(false);
-      }
-    };
+      const token = localStorage.getItem("accessToken"); // 또는 쿠키 등에서 가져오기
+      const response = await axios.get(WASHING_GET_ALL, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+      });
 
-    fetchHistory();
-  }, []);
+      const apiData = response.data.data;
+
+      // 프론트 표시 형식으로 매핑
+      const formatted = apiData.map((item) => ({
+        id: item.washingHistoryId,
+        date: item.createdAt,
+        type:
+          item.analysisType === "LABEL"
+            ? "라벨"
+            : item.analysisType === "STAIN"
+            ? "얼룩"
+            : "얼룩과 라벨",
+        result: item.analysis,
+        imageUrl: null,
+        feedback:
+          item.estimation === null
+            ? null
+            : item.estimation === true
+            ? "like"
+            : "dislike",
+      }));
+
+      setHistoryItems(formatted);
+    } catch (error) {
+      console.error("내역을 불러오는데 실패했습니다:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchHistory();
+}, []);
 
   // 피드백 업데이트 핸들러
-  const handleFeedback = (id, feedbackType) => {
-    // 실제로는 API를 호출해 서버에 피드백 업데이트
+  const handleFeedback = async (id, feedbackType) => {
+  const token = localStorage.getItem("accessToken");
 
-    // 로컬 상태 업데이트
-    setHistoryItems(
-      historyItems.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              feedback: item.feedback === feedbackType ? null : feedbackType,
-            }
-          : item
-      )
+  const newEstimation =
+    feedbackType === "like" ? true : feedbackType === "dislike" ? false : null;
+
+  try {
+    // PATCH 요청 보내기
+    const response = await axios.patch(
+      `${UPDATE_BY_ID}/${id}`, 
+      { estimation: newEstimation },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
-  };
+
+    if (response.data.success) {
+      // 로컬 상태 업데이트
+      setHistoryItems(
+        historyItems.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                feedback: item.feedback === feedbackType ? null : feedbackType,
+              }
+            : item
+        )
+      );
+    } else {
+      alert(response.data.error?.message || "평가에 실패했습니다.");
+    }
+  } catch (error) {
+    console.error("피드백 전송 실패:", error);
+    alert(
+      error.response?.data?.error?.message ||
+        "서버 오류로 평가를 저장할 수 없습니다."
+    );
+  }
+};
 
   // 날짜 포맷 함수
   const formatDate = (dateString) => {

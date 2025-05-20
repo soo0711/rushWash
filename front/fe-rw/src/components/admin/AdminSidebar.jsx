@@ -90,6 +90,18 @@ const AdminSidebar = () => {
             path="/admin/scent-categories"
           /> */}
 
+          {/* 얼룩 세탁법 내역 관리 */}
+          <li className="mt-6 px-4">
+            <h2 className="text-xl text-blue-400 font-semibold uppercase tracking-wider">
+              얼룩 세탁법 관리
+            </h2>
+          </li>
+          <SidebarMenuItem
+            icon={<i className="fas fa-history"></i>}
+            title="얼룩 세탁법 내역"
+            path="/admin/stain-removal"
+          />
+
           {/* 분석 관리 */}
           <li className="mt-6 px-4">
             <h2 className="text-xl text-blue-400 font-semibold uppercase tracking-wider">
@@ -101,6 +113,7 @@ const AdminSidebar = () => {
             title="분석 내역"
             path="/admin/washing-histories"
           />
+
           {/* AI 관리 */}
           <li className="mt-6 px-4">
             <h2 className="text-xl text-blue-400 font-semibold uppercase tracking-wider">

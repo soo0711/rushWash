@@ -1,14 +1,24 @@
 import React, { useState } from "react";
 import Header from "../../components/common/Header";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { USER_API, PROXY_API, useProxy } from "../../constants/api";
+import { useLocation } from "react-router-dom";
+
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { name, email, userId } = location.state || {};
   const [passwords, setPasswords] = useState({
     newPassword: "",
     confirmPassword: "",
   });
   const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // API URL 설정
+  const PASSWORD_UPDATE_URL = useProxy ? PROXY_API.PASSWORD_UPDATE : USER_API.PASSWORD_UPDATE;
 
   // 비밀번호 변경 핸들러
   const handleChange = (e) => {
@@ -21,26 +31,53 @@ const ResetPasswordPage = () => {
   };
 
   // 비밀번호 재설정 제출 핸들러
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // 유효성 검사
-    if (!passwords.newPassword || !passwords.confirmPassword) {
-      setErrorMsg("모든 필드를 입력해주세요");
-      return;
+  // 유효성 검사
+  if (!passwords.newPassword || !passwords.confirmPassword) {
+    setErrorMsg("모든 필드를 입력해주세요");
+    return;
+  }
+
+  if (passwords.newPassword !== passwords.confirmPassword) {
+    setErrorMsg("비밀번호가 일치하지 않습니다");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setErrorMsg("");
+    console.log(userId);
+    console.log(passwords);
+    // 비밀번호 재설정 요청
+    const response = await axios.patch(PASSWORD_UPDATE_URL, {
+      userId: userId, // 전달받은 유저 ID
+      password: passwords.newPassword,
+    });
+
+    if (response.data.success) {
+      alert("비밀번호가 성공적으로 변경되었습니다.");
+      navigate("/login"); // 로그인 페이지로 이동
+    } else {
+      setErrorMsg(response.data.error?.message || "비밀번호 변경 실패");
     }
+  } catch (err) {
+    console.error("비밀번호 변경 오류:", err);
 
-    if (passwords.newPassword !== passwords.confirmPassword) {
-      setErrorMsg("비밀번호가 일치하지 않습니다");
-      return;
+    if (err.response) {
+      setErrorMsg(
+        err.response.data.error?.message || "서버 오류가 발생했습니다"
+      );
+    } else if (err.request) {
+      setErrorMsg("서버에 연결할 수 없습니다. 네트워크를 확인해주세요.");
+    } else {
+      setErrorMsg("비밀번호 변경 중 알 수 없는 오류가 발생했습니다.");
     }
-
-    // 비밀번호 재설정 API 호출 로직 추가 (실제 구현 시)
-    console.log("비밀번호 변경:", passwords.newPassword);
-
-    alert("비밀번호가 성공적으로 변경되었습니다.");
-    navigate("/login"); // 로그인 페이지로 이동
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-gray-50 sandol-font">

@@ -10,22 +10,11 @@ const UserDetailModal = ({
   onCancelEdit,
 }) => {
   const [editedUser, setEditedUser] = useState(null);
-  const [verificationStatus, setVerificationStatus] = useState({
-    isVerified: false,
-    verifyCode: "",
-    verifiedAt: null,
-  });
 
   // 사용자 정보가 변경될 때마다 편집 상태 초기화
   useEffect(() => {
     if (user) {
       setEditedUser({ ...user });
-      // 인증 상태 설정 (실제로는 API에서 가져올 정보)
-      setVerificationStatus({
-        isVerified: user.is_verified || false,
-        verifyCode: "123456", // 예시 코드
-        verifiedAt: user.is_verified ? new Date().toISOString() : null,
-      });
     }
   }, [user]);
 
@@ -38,14 +27,34 @@ const UserDetailModal = ({
     }));
   };
 
-  // 인증 상태 토글 핸들러
-  const handleVerificationToggle = () => {
-    if (isEditMode) {
-      setEditedUser((prev) => ({
-        ...prev,
-        is_verified: !prev.is_verified,
-      }));
+  // 전화번호 형식 포맷팅 (하이픈 추가)
+  const formatPhoneNumber = (value) => {
+    // 이미 포맷된 번호가 들어오면 그대로 반환
+    if (value && value.includes("-")) return value;
+
+    // 숫자만 남기기
+    const numbers = value?.replace(/[^\d]/g, "") || "";
+
+    // 형식에 맞게 하이픈 추가
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(
+        7,
+        11
+      )}`;
     }
+  };
+
+  // 전화번호 입력 핸들러
+  const handlePhoneChange = (e) => {
+    const formattedNumber = formatPhoneNumber(e.target.value);
+    setEditedUser((prev) => ({
+      ...prev,
+      phone_number: formattedNumber,
+    }));
   };
 
   // 저장 핸들러
@@ -122,8 +131,9 @@ const UserDetailModal = ({
                 type="tel"
                 name="phone_number"
                 value={editedUser.phone_number || ""}
-                onChange={handleChange}
+                onChange={handlePhoneChange}
                 disabled={!isEditMode}
+                placeholder="ex) 010-1234-5678"
                 className={`w-full border ${
                   isEditMode ? "border-gray-300" : "border-gray-200 bg-gray-50"
                 } rounded-md px-3 py-2 text-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
@@ -149,60 +159,9 @@ const UserDetailModal = ({
             </div>
           </div>
 
-          {/* 인증 정보 및 추가 정보 */}
+          {/* 추가 정보 */}
           <div className="space-y-4 col-span-1">
-            <div>
-              <label className="block text-lg font-medium text-gray-700 mb-1">
-                인증 상태
-              </label>
-              <div
-                className={`flex items-center ${
-                  isEditMode ? "cursor-pointer" : "pointer-events-none"
-                }`}
-                onClick={handleVerificationToggle}
-              >
-                <div
-                  className={`h-6 w-12 rounded-full p-1 transition-colors duration-300 ${
-                    editedUser.is_verified ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                >
-                  <div
-                    className={`bg-white h-4 w-4 rounded-full shadow-md transform transition-transform duration-300 ${
-                      editedUser.is_verified ? "translate-x-6" : ""
-                    }`}
-                  ></div>
-                </div>
-                <span className="ml-3 text-lg">
-                  {editedUser.is_verified ? "인증 완료" : "미인증"}
-                </span>
-              </div>
-            </div>
-
-            {verificationStatus.isVerified && (
-              <>
-                <div>
-                  <label className="block text-lg font-medium text-gray-700 mb-1">
-                    인증 코드
-                  </label>
-                  <div className="w-full border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-lg">
-                    {verificationStatus.verifyCode}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-medium text-gray-700 mb-1">
-                    인증 일시
-                  </label>
-                  <div className="w-full border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-lg">
-                    {verificationStatus.verifiedAt
-                      ? new Date(verificationStatus.verifiedAt).toLocaleString()
-                      : "N/A"}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* 세탁 히스토리 정보 */}
+            {/* 세탁 히스토리 정보 - API 연동 후 구현 */}
             <div>
               <label className="block text-lg font-medium text-gray-700 mb-1">
                 세탁 히스토리
@@ -210,7 +169,7 @@ const UserDetailModal = ({
               <div className="w-full border border-gray-200 bg-gray-50 rounded-md px-3 py-3 text-lg">
                 <div className="flex justify-between">
                   <span>총 세탁 횟수</span>
-                  <span className="font-semibold">3회</span>
+                  <span className="font-semibold">-</span>
                 </div>
                 <div className="mt-2">
                   <a
@@ -223,23 +182,6 @@ const UserDetailModal = ({
                   </a>
                 </div>
               </div>
-            </div>
-
-            {/* 메모 정보 */}
-            <div>
-              <label className="block text-lg font-medium text-gray-700 mb-1">
-                메모
-              </label>
-              <textarea
-                name="memo"
-                value={editedUser.memo || ""}
-                onChange={handleChange}
-                disabled={!isEditMode}
-                className={`w-full border ${
-                  isEditMode ? "border-gray-300" : "border-gray-200 bg-gray-50"
-                } rounded-md px-3 py-2 text-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 h-28`}
-                placeholder="사용자에 대한 메모를 입력하세요"
-              ></textarea>
             </div>
           </div>
         </div>

@@ -1,144 +1,105 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Header from "../../components/common/Header";
 import { Link, useParams } from "react-router-dom";
+import axios from "axios";
 
 const FabricSoftenerResultPage = () => {
   const { categoryId } = useParams(); // URL에서 카테고리 ID 받기
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
+  // 컴포넌트 최상위 레벨에 useRef 선언
+  const alertShownRef = useRef(false);
 
-  // 목업 카테고리 데이터
-  const mockCategories = [
-    { id: "1", name: "상쾌한 향" },
-    { id: "2", name: "꽃 향" },
-    { id: "3", name: "과일 향" },
-    { id: "4", name: "우디한 향" },
-    { id: "5", name: "파우더 향" },
-    { id: "6", name: "시트러스 향" },
-  ];
 
-  // 목업 제품 데이터 - 카테고리별 제품
-  const mockProductsByCategory = {
-    1: [
-      {
-        id: 1,
-        brand: "다우니",
-        name: "초고농축 섬유유연제 클린브리즈",
-        imageUrl: null,
-      },
-      {
-        id: 2,
-        brand: "피죤",
-        name: "섬유유연제 레귤러",
-        imageUrl: null,
-      },
-      {
-        id: 3,
-        brand: "스너글",
-        name: "블루 스파클",
-        imageUrl: null,
-      },
-    ],
-    2: [
-      {
-        id: 4,
-        brand: "샤프란",
-        name: "꽃담초 피오니",
-        imageUrl: null,
-      },
-      {
-        id: 5,
-        brand: "다우니",
-        name: "에이프릴 프레쉬",
-        imageUrl: null,
-      },
-      {
-        id: 6,
-        brand: "스너글",
-        name: "벚꽃 향기",
-        imageUrl: null,
-      },
-    ],
-    3: [
-      {
-        id: 7,
-        brand: "샤프란",
-        name: "애플 매직",
-        imageUrl: null,
-      },
-      {
-        id: 8,
-        brand: "피죤",
-        name: "시트러스 가든",
-        imageUrl: null,
-      },
-    ],
-    4: [
-      {
-        id: 9,
-        brand: "르네셀",
-        name: "시크릿 우드",
-        imageUrl: null,
-      },
-      {
-        id: 10,
-        brand: "랑벨",
-        name: "프리미엄 우디향",
-        imageUrl: null,
-      },
-    ],
-    5: [
-      {
-        id: 11,
-        brand: "닥터슈슈",
-        name: "파우더 코튼",
-        imageUrl: null,
-      },
-      {
-        id: 12,
-        brand: "코튼블루",
-        name: "파우더 프레쉬",
-        imageUrl: null,
-      },
-    ],
-    6: [
-      {
-        id: 13,
-        brand: "다우니",
-        name: "레몬그라스 리프레셔",
-        imageUrl: null,
-      },
-      {
-        id: 14,
-        brand: "피죤",
-        name: "시트러스 선샤인",
-        imageUrl: null,
-      },
-    ],
+useEffect(() => {
+  // 새로운 categoryId가 들어올 때마다 ref를 초기화
+  alertShownRef.current = false;
+  
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const scent = categoryId || "refreshing";
+      const response = await axios.get(`/fabric-softeners/${scent}`);
+
+      // 성공 응답일 때
+      if (response.data.success) {
+        const scentMap = {
+          refreshing: "상쾌한 향",
+          floral: "꽃 향",
+          fruity: "과일 향",
+          woody: "우디한 향",
+          powdery: "파우더 향",
+          citrus: "시트러스 향",
+        };
+
+        setCategory({ id: scent, name: scentMap[scent] || "알 수 없음" });
+
+        const products = response.data.data.map((item, index) => ({
+          id: index + 1,
+          brand: item.brand,
+          name: item.productName,
+          imageUrl: item.imageUrl,
+        }));
+
+        setProducts(products);
+      } else {
+        // 여기엔 success가 false인 정상 응답 처리
+        const errorMsg = response.data.error?.message || "알 수 없는 오류가 발생했습니다.";
+        if (!alertShownRef.current) {
+          alert(`에러 발생: ${errorMsg}`);
+          alertShownRef.current = true;
+          window.history.back();
+        }
+
+        setProducts([]);
+        setCategory({ id: scent, name: "알 수 없음" });
+      }
+    } catch (error) {
+      // axios 에러 처리
+      if (error.response) {
+        // 서버가 응답했지만 오류 상태코드일 때
+        if (error.response.status === 404) {
+          // 404 Not Found 에러 처리
+          if (!alertShownRef.current) {
+            alert("해당 향기 카테고리를 찾을 수 없습니다. 다시 선택해주세요.");
+            alertShownRef.current = true;
+            window.history.back();
+          }
+        } else {
+          // 그 외 상태코드 에러 처리
+          if (!alertShownRef.current) {
+            alert(`서버 에러: ${error.response.status} - ${error.response.statusText}`);
+            alertShownRef.current = true;
+            window.history.back();
+          }
+        }
+      } else if (error.request) {
+        // 요청은 되었으나 응답이 없는 경우 (네트워크 문제 등)
+        console.error("서버 또는 네트워크 에러:", error);
+        if (!alertShownRef.current) {
+          alert("서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
+          alertShownRef.current = true;
+          window.history.back();
+        }
+      } else {
+        // 요청 설정 중 발생한 에러
+        if (!alertShownRef.current) {
+          alert("알 수 없는 오류가 발생했습니다.");
+          alertShownRef.current = true;
+          window.history.back();
+        }
+      }
+
+      setProducts([]);
+      setCategory({ id: "error", name: "오류" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    // 실제로는 API 호출을 통해 데이터를 가져옴
-    // 여기서는 목업 데이터 사용
-    const loadData = () => {
-      // URL 파라미터가 없으면 기본값 1 (상쾌한 향) 사용
-      const id = categoryId || "1";
-
-      // 카테고리 찾기
-      const selectedCategory = mockCategories.find((c) => c.id === id);
-      setCategory(selectedCategory);
-
-      // 제품 목록 가져오기
-      setProducts(mockProductsByCategory[id] || []);
-
-      setLoading(false);
-    };
-
-    // 데이터 로드 시뮬레이션
-    setTimeout(loadData, 500);
-  }, [categoryId]);
+  fetchData();
+}, [categoryId]);
 
   if (loading) {
     return (
@@ -184,20 +145,24 @@ const FabricSoftenerResultPage = () => {
               key={product.id}
               className="bg-white p-5 rounded-lg shadow-md flex items-center hover:shadow-lg transition-shadow duration-200"
             >
-              {/* 제품 이미지 (실제로는 제품 이미지가 있을 것) */}
-              <div className="w-24 h-24 bg-blue-100 rounded-md flex items-center justify-center mr-4 flex-shrink-0">
-                <span className="text-blue-500 text-xs text-center">
-                  제품 이미지
-                </span>
+              {/* 제품 이미지 */}
+              <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 mr-4">
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-500 text-xs text-center">이미지 없음</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex-grow">
-                <p className="text-blue-600 text-lg font-medium">
-                  {product.brand}
-                </p>
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {product.name}
-                </h3>
+                <p className="text-blue-600 text-lg font-medium">{product.brand}</p>
+                <h3 className="text-xl font-semibold text-gray-800">{product.name}</h3>
               </div>
             </div>
           ))}
