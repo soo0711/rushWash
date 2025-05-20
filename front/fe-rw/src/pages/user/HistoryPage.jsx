@@ -11,96 +11,103 @@ const HistoryPage = () => {
   const [error, setError] = useState("");
   //API URL 설정
   const WASHING_GET_ALL = useProxy ? PROXY_API.GET_ALL : WASHING_API.GET_ALL;
-  const UPDATE_BY_ID = useProxy ? PROXY_API.UPDATE_BY_ID : WASHING_API.UPDATE_BY_ID;
+  const UPDATE_BY_ID = useProxy
+    ? PROXY_API.UPDATE_BY_ID
+    : WASHING_API.UPDATE_BY_ID;
 
   // 컴포넌트 마운트 시 분석 내역 데이터 불러오기
   useEffect(() => {
-  const fetchHistory = async () => {
-    try {
-      setLoading(true);
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
 
-      const token = localStorage.getItem("accessToken"); // 또는 쿠키 등에서 가져오기
-      const response = await axios.get(WASHING_GET_ALL, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-      });
+        const token = localStorage.getItem("accessToken"); // 또는 쿠키 등에서 가져오기
+        const response = await axios.get(WASHING_GET_ALL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      const apiData = response.data.data;
+        const apiData = response.data.data;
 
-      // 프론트 표시 형식으로 매핑
-      const formatted = apiData.map((item) => ({
-        id: item.washingHistoryId,
-        date: item.createdAt,
-        type:
-          item.analysisType === "LABEL"
-            ? "라벨"
-            : item.analysisType === "STAIN"
-            ? "얼룩"
-            : "얼룩과 라벨",
-        result: item.analysis,
-        imageUrl: null,
-        feedback:
-          item.estimation === null
-            ? null
-            : item.estimation === true
-            ? "like"
-            : "dislike",
-      }));
+        // 프론트 표시 형식으로 매핑
+        const formatted = apiData.map((item) => ({
+          id: item.washingHistoryId,
+          date: item.createdAt,
+          type:
+            item.analysisType === "LABEL"
+              ? "라벨"
+              : item.analysisType === "STAIN"
+              ? "얼룩"
+              : "얼룩과 라벨",
+          result: item.analysis,
+          imageUrl: null,
+          feedback:
+            item.estimation === null
+              ? null
+              : item.estimation === true
+              ? "like"
+              : "dislike",
+        }));
 
-      setHistoryItems(formatted);
-    } catch (error) {
-      console.error("내역을 불러오는데 실패했습니다:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setHistoryItems(formatted);
+      } catch (error) {
+        console.error("내역을 불러오는데 실패했습니다:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchHistory();
-}, []);
+    fetchHistory();
+  }, []);
 
   // 피드백 업데이트 핸들러
   const handleFeedback = async (id, feedbackType) => {
-  const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("accessToken");
 
-  const newEstimation =
-    feedbackType === "like" ? true : feedbackType === "dislike" ? false : null;
+    const newEstimation =
+      feedbackType === "like"
+        ? true
+        : feedbackType === "dislike"
+        ? false
+        : null;
 
-  try {
-    // PATCH 요청 보내기
-    const response = await axios.patch(
-      `${UPDATE_BY_ID}/${id}`, 
-      { estimation: newEstimation },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (response.data.success) {
-      // 로컬 상태 업데이트
-      setHistoryItems(
-        historyItems.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                feedback: item.feedback === feedbackType ? null : feedbackType,
-              }
-            : item
-        )
+    try {
+      // PATCH 요청 보내기
+      const response = await axios.patch(
+        `${UPDATE_BY_ID}/${id}`,
+        { estimation: newEstimation },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-    } else {
-      alert(response.data.error?.message || "평가에 실패했습니다.");
+
+      if (response.data.success) {
+        // 로컬 상태 업데이트
+        setHistoryItems(
+          historyItems.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  feedback:
+                    item.feedback === feedbackType ? null : feedbackType,
+                }
+              : item
+          )
+        );
+      } else {
+        alert(response.data.error?.message || "평가에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("피드백 전송 실패:", error);
+      alert(
+        error.response?.data?.error?.message ||
+          "서버 오류로 평가를 저장할 수 없습니다."
+      );
     }
-  } catch (error) {
-    console.error("피드백 전송 실패:", error);
-    alert(
-      error.response?.data?.error?.message ||
-        "서버 오류로 평가를 저장할 수 없습니다."
-    );
-  }
-};
+  };
 
   // 날짜 포맷 함수
   const formatDate = (dateString) => {
@@ -139,6 +146,12 @@ const HistoryPage = () => {
                     <p className="text-gray-500">{formatDate(item.date)}</p>
                     <h3 className="text-xl font-semibold">{item.type} 분석</h3>
                   </div>
+                  <Link
+                    to={`/history/${item.id}`}
+                    className="text-blue-500 font-medium text-m cursor-pointer hover:text-blue-700 hover:underline"
+                  >
+                    상세보기
+                  </Link>
                 </div>
 
                 <p className="text-lg mb-4">{item.result}</p>

@@ -15,6 +15,7 @@ import StainAnalyzePage from "./pages/user/StainAnalyzePage";
 import LabelAnalyzePage from "./pages/user/LabelAnalyzePage";
 import AnalysisResultPage from "./pages/user/AnalysisResultPage";
 import HistoryPage from "./pages/user/HistoryPage";
+import HistoryDetailPage from "./pages/user/HistoryDetailPage";
 import NearbyLaundryPage from "./pages/user/NearbyLaundryPage";
 import FabricSoftenerPage from "./pages/user/FabricSoftenerPage";
 import FabricSoftenerResultPage from "./pages/user/FabricSoftenerResultPage";
@@ -55,6 +56,7 @@ function App() {
 
           {/* 기타 기능 페이지 */}
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/history/:id" element={<HistoryDetailPage />} />
           <Route path="/fabricsoftener" element={<FabricSoftenerPage />} />
           <Route
             path="/fabricsoftener/result/:categoryId"
