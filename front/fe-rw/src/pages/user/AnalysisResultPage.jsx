@@ -90,10 +90,13 @@ const AnalysisResultPage = () => {
 
         {/* Stain 타입인 경우 얼룩 결과만 표시 */}
         {analysisType === "stain" &&
-          renderResultSection("감지된 얼룩", analysisData.type, analysisData.methods)}
-
-        {/* Label 및 Both도 확장 가능 */}
-        {/* 추후 analysisType === 'both' 또는 'label'에 따라 분기 추가 가능 */}
+        analysisData.types.map((stainType, index) =>
+          renderResultSection(
+            `${index + 1}번째로 확인된 얼룩`,
+            stainType,
+            analysisData.instructionsMap[stainType] || []
+          )
+        )}
 
         {/* 결과 저장 버튼 */}
         <div className="mt-8">

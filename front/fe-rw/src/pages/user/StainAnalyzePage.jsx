@@ -61,27 +61,37 @@ const StainAnalyzePage = () => {
     );
 
     if (response.data.success) {
-      const result = response.data.data;
+    const result = response.data.data;
 
-      const topClass = result.detected_stain.top3[0]?.class || "알 수 없음";
+    // 1. top3 중복 제거
+    const uniqueStainTypes = [
+      ...new Set(result.detected_stain.top3.map((s) => s.class)),
+    ];
 
-      const methods = result.washing_instructions
-        .filter((w) => w.class === topClass)
+    // 2. 얼룩별 세탁방법 매핑
+    const instructionsMap = {};
+    uniqueStainTypes.forEach((stain) => {
+      const matchingInstructions = result.washing_instructions
+        .filter((w) => w.class === stain)
         .map((w) => ({
-          title: w.instruction,
-          description: "",
+          title: stain,
+          description: w.instruction,
         }));
 
-      navigate(`/analyze/result/stain`, {
-        state: {
-          analysisType: "stain",
-          analysisData: {
-            type: topClass,
-            methods,
-          },
-        },
-      });
-    } else {
+      instructionsMap[stain] = matchingInstructions;
+    });
+
+    // 3. 결과 페이지로 이동
+    navigate(`/analyze/result/stain`, {
+      state: {
+        analysisType: "stain",
+        analysisData: {
+          types: uniqueStainTypes,
+          instructionsMap: instructionsMap,
+        },  
+      },
+    });
+  } else {
       alert(response.data.error?.message || "분석에 실패했습니다.");
     }
   } catch (err) {

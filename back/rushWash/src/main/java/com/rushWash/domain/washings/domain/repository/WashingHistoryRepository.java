@@ -9,41 +9,40 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface WashingHistoryRepository extends JpaRepository<WashingHistory, Integer> {
     @Query("""
     SELECT new com.rushWash.domain.washings.api.dto.response.WashingList(
         wh.id,
         wh.analysisType,
-        wr.analysis,
+        (
+            SELECT wr.analysis
+            FROM WashingResult wr
+            WHERE wr.washingHistory.id = wh.id
+            ORDER BY wr.id ASC
+            LIMIT 1
+        ),
         wh.estimation,
         wh.createdAt
     )
     FROM WashingHistory wh
-    JOIN WashingResult wr ON wr.washingHistory.id = wh.id
     WHERE wh.userId = :userId
     ORDER BY wh.createdAt DESC
-""")
+    """)
     List<WashingList> findItemsByUserId(@Param("userId") int userId);
 
 
-     @Query("""
-    SELECT new com.rushWash.domain.washings.api.dto.response.WashingDetailResponse(
-        wh.id,
-        wh.stainImageUrl,
-        wh.labelImageUrl,
-        wh.analysisType,
-        wr.stainCategory,
-        wr.analysis,
-        wh.estimation,
-        wh.createdAt
-    )
+    @Query("""
+    SELECT wh
     FROM WashingHistory wh
-    JOIN WashingResult wr ON wr.washingHistory.id = wh.id
+    LEFT JOIN FETCH wh.washingResults wr
     WHERE wh.userId = :userId AND wh.id = :washingHistoryId
-    ORDER BY wh.createdAt DESC
-""")
-    WashingDetailResponse findDetailByUserIdAndWashingHistoryId(@Param("userId") int userId, @Param(("washingHistoryId")) int washingHistoryId);
+    """)
+    Optional<WashingHistory> findWithResultsByUserIdAndWashingHistoryId(
+            @Param("userId") int userId,
+            @Param("washingHistoryId") int washingHistoryId
+    );
 
 
     WashingHistory findByIdAndUserId(int id, int userId);

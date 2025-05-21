@@ -67,7 +67,7 @@ public class AnalysisService {
             }
 
             // WashingHistory와 WashingResult 저장
-            WashingHistory washingHistory = washingService.addWashingHistory(userId, AnalysisType.STAIN, savedFilePath);
+            WashingHistory washingHistory = washingService.addWashingHistoryByStainImage(userId, AnalysisType.STAIN, savedFilePath);
             List<AnalysisOnlyStainResponse.WashingInstruction> instructions = response.washingInstructions();
 
             if (instructions == null) instructions = Collections.emptyList();
@@ -117,7 +117,7 @@ public class AnalysisService {
             }
 
             // WashingHistory와 WashingResult 저장
-            WashingHistory washingHistory = washingService.addWashingHistory(userId, AnalysisType.LABEL, savedFilePath);
+            WashingHistory washingHistory = washingService.addWashingHistoryByLabelImage(userId, AnalysisType.LABEL, savedFilePath);
 
             List<String> detectedLabels = response.detectedLabels();
             List<String> labelExplanation = response.labelExplanation();

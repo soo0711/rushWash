@@ -32,7 +32,19 @@ public class WashingService {
 
     public WashingDetailResponse getWashingDetailByUserIdAndWashingHistoryId(int userId, int washingHistoryId) {
 
-        return washingHistoryRepository.findDetailByUserIdAndWashingHistoryId(userId, washingHistoryId);
+        WashingHistory wh = washingHistoryRepository
+                .findWithResultsByUserIdAndWashingHistoryId(userId, washingHistoryId)
+                .orElseThrow(() -> new CustomException(ErrorCode.WASHING_HISTORY_NOT_FOUNT));
+
+        return new WashingDetailResponse(
+                wh.getId(),
+                wh.getStainImageUrl(),
+                wh.getLabelImageUrl(),
+                wh.getAnalysisType(),
+                wh.getEstimation(),
+                wh.getCreatedAt(),
+                wh.getWashingResults() // 연관된 List<WashingResult>
+        );
 
     }
 
@@ -58,12 +70,23 @@ public class WashingService {
         return washingHistoryRepository.getWashingGoodList();
     }
 
-    public WashingHistory addWashingHistory(int userId, AnalysisType analysisType, String imageUrl){
+    public WashingHistory addWashingHistoryByStainImage(int userId, AnalysisType analysisType, String imageUrl){
         WashingHistory washingHistory = washingHistoryRepository.save(
                 WashingHistory.builder()
                         .userId(userId)
                         .analysisType(analysisType)
                         .stainImageUrl(imageUrl)
+                        .build()
+        );
+        return washingHistory;
+    }
+
+    public WashingHistory addWashingHistoryByLabelImage(int userId, AnalysisType analysisType, String imageUrl){
+        WashingHistory washingHistory = washingHistoryRepository.save(
+                WashingHistory.builder()
+                        .userId(userId)
+                        .analysisType(analysisType)
+                        .labelImageUrl(imageUrl)
                         .build()
         );
         return washingHistory;

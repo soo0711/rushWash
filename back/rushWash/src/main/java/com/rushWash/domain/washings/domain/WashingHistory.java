@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @ToString
@@ -36,4 +37,8 @@ public class WashingHistory {
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "washingHistory", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<WashingResult> washingResults;
+
 }
