@@ -6,8 +6,8 @@ import axios from "axios";
 const AdminWashingHistoriesPage = () => {
   // 상태 관리
   const [washingHistories, setWashingHistories] = useState([]);
-  const [analysisTypes, setAnalysisTypes] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAnalysisType, setSelectedAnalysisType] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
@@ -16,94 +16,137 @@ const AdminWashingHistoriesPage = () => {
   const [currentHistory, setCurrentHistory] = useState(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState({ url: "", title: "" });
-  const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
-    key: "created_at",
+    key: "createdAt",
     direction: "desc",
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  const [selectedHistories, setSelectedHistories] = useState([]);
+  const [selectedSatisfaction, setSelectedSatisfaction] = useState("");
 
   //API URL 설정
   const GET_ALL = useProxy ? PROXY_API.GET_ALL : ADMIN_WASHINGS_API.GET_ALL;
   const DELETE = useProxy ? PROXY_API.DELETE : ADMIN_WASHINGS_API.DELETE;
   const GET_GOOD = useProxy ? PROXY_API.GET_GOOD : ADMIN_WASHINGS_API.GET_GOOD;
-  
 
-  // 초기 데이터 로드 (실제로는 API 호출)
+  // 초기 데이터 로드
   useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(GET_ALL);
-      if (response.data.success) {
-        const apiData = response.data.data.map((item) => ({
-          id: item.washingHistoryId,
-          user_id: item.userId,
-          user_email : item.userEmail,
-          analysis_type: item.analysisType === "LABEL" ? "섬유 분석" : "얼룩 분석",
-          stain_image_url: item.stain_image_url,
-          label_image_url: item.label_image_url,
-          estimation: item.estimation,
-          created_at: item.createdAt.split("T")[0],
-          updated_at: item.createdAt.split("T")[0],
-          result: {
-            stain_category: item.stainCategory,
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get("/admin/washings");
+        if (response.data.success) {
+          const apiData = response.data.data.map((item) => ({
+            id: item.washingHistoryId,
+            userId: item.userId,
+            userEmail: item.userEmail,
+            analysisType: item.analysisType,
+            stainImageUrl: item.stainImageUrl,
+            labelImageUrl: item.labelImageUrl,
+            estimation: item.estimation,
+            createdAt: item.createdAt,
+            stainCategory: item.stainCategory,
             analysis: item.analysis,
-          },
-          user: { id: item.userId, name: `${item.userEmail}`, phone_number: "010-0000-0000" },
-        }));
-        setWashingHistories(apiData);
-      } else {
-        console.error(response.data.error?.message || "불러오기 실패");
+          }));
+          setWashingHistories(apiData);
+        } else {
+          console.error(response.data.error?.message || "불러오기 실패");
+          setError(
+            response.data.error?.message || "데이터를 불러올 수 없습니다."
+          );
+        }
+      } catch (err) {
+        console.error("API 호출 오류:", err);
+        setError("서버 오류로 데이터를 불러올 수 없습니다.");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("API 호출 오류:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
   const handleDelete = async (historyId) => {
     if (!window.confirm("정말로 이 분석 내역을 삭제하시겠습니까?")) return;
 
     try {
-      const response = await axios.delete(DELETE, {
-        data: { washingHistoryId: historyId },
-      });
+      const response = await axios.delete(`/admin/washings/${historyId}`);
 
       if (response.data && response.data.success) {
-        alert(response.data.data || "삭제 완료되었습니다.");
+        alert("삭제 완료되었습니다.");
         setWashingHistories((prev) =>
           prev.filter((item) => item.id !== historyId)
         );
-      } else {
-        alert(
-          response.data.error?.message || "분석 내역 삭제에 실패했습니다."
+        setSelectedHistories(
+          selectedHistories.filter((id) => id !== historyId)
         );
+      } else {
+        alert(response.data.error?.message || "분석 내역 삭제에 실패했습니다.");
       }
     } catch (err) {
       console.error("삭제 중 오류 발생:", err);
       alert("서버 오류로 삭제하지 못했습니다.");
     }
   };
+
+  // 선택된 내역 일괄 삭제
+  const handleBulkDelete = async () => {
+    if (selectedHistories.length === 0) {
+      alert("삭제할 항목을 선택해주세요.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `선택한 ${selectedHistories.length}개 항목을 삭제하시겠습니까?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await axios.delete("/admin/washings/bulk", {
+        data: { ids: selectedHistories },
+      });
+
+      if (response.data && response.data.success) {
+        alert(`${selectedHistories.length}개 항목이 삭제되었습니다.`);
+        setWashingHistories((prev) =>
+          prev.filter((item) => !selectedHistories.includes(item.id))
+        );
+        setSelectedHistories([]);
+      } else {
+        alert(response.data.error?.message || "일괄 삭제에 실패했습니다.");
+      }
+    } catch (err) {
+      console.error("일괄 삭제 중 오류 발생:", err);
+      alert("서버 오류로 삭제하지 못했습니다.");
+    }
+  };
+
   // 필터링된 데이터
   const filteredHistories = washingHistories.filter((item) => {
+    // 검색어 필터링
     const matchesSearch =
-      item.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.result?.analysis &&
-        item.result.analysis.toLowerCase().includes(searchTerm.toLowerCase()));
+      item.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.analysis &&
+        item.analysis.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (item.stainCategory &&
+        item.stainCategory.toLowerCase().includes(searchTerm.toLowerCase()));
 
+    // 분석 유형 필터링
     const matchesAnalysisType = selectedAnalysisType
-      ? item.analysis_type === selectedAnalysisType
+      ? item.analysisType === selectedAnalysisType
       : true;
 
+    // 사용자 필터링
     const matchesUser = selectedUser
-      ? item.user_id === Number(selectedUser)
+      ? item.userId === Number(selectedUser)
       : true;
 
-    const createdDate = new Date(item.created_at);
+    // 날짜 범위 필터링
+    const createdDate = new Date(item.createdAt);
     const startDateMatch = dateRange.start
       ? new Date(dateRange.start) <= createdDate
       : true;
@@ -111,10 +154,18 @@ const AdminWashingHistoriesPage = () => {
       ? new Date(dateRange.end) >= createdDate
       : true;
 
+    // 만족도 필터링
+    const matchesSatisfaction =
+      selectedSatisfaction === ""
+        ? true
+        : selectedSatisfaction === "true"
+        ? item.estimation === true
+        : item.estimation === false;
     return (
       matchesSearch &&
       matchesAnalysisType &&
       matchesUser &&
+      matchesSatisfaction &&
       startDateMatch &&
       endDateMatch
     );
@@ -122,12 +173,16 @@ const AdminWashingHistoriesPage = () => {
 
   // 정렬 로직
   const sortedHistories = [...filteredHistories].sort((a, b) => {
-    if (sortConfig.key === "user") {
-      if (a.user.name < b.user.name)
+    if (sortConfig.key === "userEmail") {
+      if (a.userEmail < b.userEmail)
         return sortConfig.direction === "asc" ? -1 : 1;
-      if (a.user.name > b.user.name)
+      if (a.userEmail > b.userEmail)
         return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
+    } else if (sortConfig.key === "createdAt") {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return sortConfig.direction === "asc" ? dateA - dateB : dateB - dateA;
     } else {
       if (a[sortConfig.key] < b[sortConfig.key])
         return sortConfig.direction === "asc" ? -1 : 1;
@@ -136,6 +191,15 @@ const AdminWashingHistoriesPage = () => {
       return 0;
     }
   });
+
+  // 페이지네이션
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentHistories = sortedHistories.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(filteredHistories.length / itemsPerPage);
 
   // 정렬 처리
   const handleSort = (key) => {
@@ -149,11 +213,25 @@ const AdminWashingHistoriesPage = () => {
   // 정렬 방향 아이콘 표시
   const getSortIcon = (name) => {
     if (sortConfig.key !== name) return null;
-    return sortConfig.direction === "asc" ? (
-      <i className="fas fa-sort-up ml-1"></i>
-    ) : (
-      <i className="fas fa-sort-down ml-1"></i>
+    return sortConfig.direction === "asc" ? "↑" : "↓";
+  };
+
+  // 항목 선택 핸들러
+  const handleSelectHistory = (id) => {
+    setSelectedHistories(
+      selectedHistories.includes(id)
+        ? selectedHistories.filter((historyId) => historyId !== id)
+        : [...selectedHistories, id]
     );
+  };
+
+  // 전체 선택/해제 핸들러
+  const handleSelectAllHistories = (isChecked) => {
+    if (isChecked) {
+      setSelectedHistories(currentHistories.map((item) => item.id));
+    } else {
+      setSelectedHistories([]);
+    }
   };
 
   // 상세 모달 열기
@@ -179,7 +257,32 @@ const AdminWashingHistoriesPage = () => {
     setSearchTerm("");
     setSelectedAnalysisType("");
     setSelectedUser("");
+    setSelectedSatisfaction("");
     setDateRange({ start: "", end: "" });
+  };
+
+  // 날짜 포맷 함수
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(date.getDate()).padStart(2, "0")}`;
+  };
+
+  // 분석 유형 표시 함수
+  const getAnalysisTypeText = (type) => {
+    switch (type) {
+      case "LABEL":
+        return "라벨";
+      case "STAIN":
+        return "얼룩";
+      case "LABEL_AND_STAIN":
+        return "얼룩과 라벨";
+      default:
+        return type;
+    }
   };
 
   // 로딩 상태 표시
@@ -194,17 +297,50 @@ const AdminWashingHistoriesPage = () => {
     );
   }
 
+  // 에러 상태 표시
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <AdminSidebar />
+        <div className="flex-1 flex justify-center items-center">
+          <div className="bg-white p-8 rounded-lg shadow-md">
+            <p className="text-red-500 text-xl mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
       <AdminSidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 상단 바 */}
-        <header className="bg-white shadow-sm z-10">
-          <div className="flex justify-between items-center px-6 py-4">
-            <h1 className="text-2xl font-semibold text-gray-800">
+        <header className="bg-white shadow-md z-10">
+          <div className="flex justify-between items-center px-8 py-6">
+            <h1 className="text-3xl font-semibold text-gray-800">
               분석 내역 관리
             </h1>
+            <div className="flex items-center">
+              {selectedHistories.length > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="flex items-center bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                >
+                  <span className="mr-2">선택 삭제</span>
+                  <span className="bg-white text-red-500 rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                    {selectedHistories.length}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
@@ -213,64 +349,93 @@ const AdminWashingHistoriesPage = () => {
           {/* 필터 컴포넌트 */}
           <div className="bg-white p-4 rounded-md shadow mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* 검색 필터 */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-search text-gray-400"></i>
-                </div>
                 <input
                   type="text"
-                  placeholder="사용자 이름 또는 분석 내용 검색..."
-                  className="pl-10 w-full border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="사용자 이메일 또는 분석 내용 검색..."
+                  className="w-full border rounded-md p-2 pl-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg
+                    className="h-4 w-4 text-gray-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
               </div>
 
+              {/* 분석 유형 필터 */}
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-filter text-gray-400"></i>
-                </div>
                 <select
-                  className="pl-10 w-full border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border rounded-md p-2 pl-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={selectedAnalysisType}
                   onChange={(e) => setSelectedAnalysisType(e.target.value)}
                 >
                   <option value="">모든 분석 유형</option>
-                  {analysisTypes.map((type) => (
-                    <option key={type.id} value={type.name}>
-                      {type.name}
-                    </option>
-                  ))}
+                  <option value="LABEL">라벨</option>
+                  <option value="STAIN">얼룩</option>
+                  <option value="LABEL_AND_STAIN">얼룩과 라벨</option>
                 </select>
-              </div>
-
-              <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-user text-gray-400"></i>
+                  <svg
+                    className="h-4 w-4 text-gray-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
-                <select
-                  className="pl-10 w-full border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                >
-                  <option value="">모든 사용자</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} ({user.phone_number})
-                    </option>
-                  ))}
-                </select>
               </div>
 
+              {/* 사용자 만족도 필터 */}
+              <div className="relative">
+                <select
+                  className="w-full border rounded-md p-2 pl-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedSatisfaction}
+                  onChange={(e) => setSelectedSatisfaction(e.target.value)}
+                >
+                  <option value="">모든 만족도</option>
+                  <option value="true">LIKE</option>
+                  <option value="false">DISLIKE</option>
+                </select>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg
+                    className="h-4 w-4 text-gray-400"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              </div>
+
+              {/* 날짜 필터 */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-calendar text-gray-400"></i>
-                  </div>
                   <input
                     type="date"
                     placeholder="시작일"
-                    className="pl-10 w-full border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={dateRange.start}
                     onChange={(e) =>
                       setDateRange({ ...dateRange, start: e.target.value })
@@ -278,13 +443,10 @@ const AdminWashingHistoriesPage = () => {
                   />
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i className="fas fa-calendar text-gray-400"></i>
-                  </div>
                   <input
                     type="date"
                     placeholder="종료일"
-                    className="pl-10 w-full border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={dateRange.end}
                     onChange={(e) =>
                       setDateRange({ ...dateRange, end: e.target.value })
@@ -298,7 +460,18 @@ const AdminWashingHistoriesPage = () => {
                   onClick={clearFilters}
                   className="text-gray-600 hover:text-gray-800 flex items-center"
                 >
-                  <i className="fas fa-times mr-1"></i>
+                  <svg
+                    className="h-4 w-4 mr-1"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                   필터 초기화
                 </button>
               </div>
@@ -307,180 +480,195 @@ const AdminWashingHistoriesPage = () => {
 
           {/* 데이터 테이블 */}
           <div className="bg-white rounded-md shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort("id")}
-                  >
-                    <div className="flex items-center">
-                      ID {getSortIcon("id")}
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort("user")}
-                  >
-                    <div className="flex items-center">
-                      사용자 이메일 {getSortIcon("user")}
-                    </div>
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort("analysis_type")}
-                  >
-                    <div className="flex items-center">
-                      분석 유형 {getSortIcon("analysis_type")}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    이미지
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    분석 결과
-                  </th>
-                  <th
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                    onClick={() => handleSort("created_at")}
-                  >
-                    <div className="flex items-center">
-                      등록일 {getSortIcon("created_at")}
-                    </div>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    액션
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sortedHistories.map((history) => (
-                  <tr key={history.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {history.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {history.user.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {history.user.phone_number}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {history.analysis_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() =>
-                            openImageModal(
-                              history.stain_image_url,
-                              "얼룩 이미지"
-                            )
-                          }
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <i className="fas fa-image"></i>
-                        </button>
-                        <button
-                          onClick={() =>
-                            openImageModal(
-                              history.label_image_url,
-                              "라벨 이미지"
-                            )
-                          }
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <i className="fas fa-tag"></i>
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="max-w-xs truncate">
-                        <span className="font-semibold">
-                          {history.result?.stain_category}:
-                        </span>{" "}
-                        {history.result?.analysis}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {history.created_at}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => openDetailModal(history)}
-                      className="text-indigo-600 hover:text-indigo-900 mr-4"
-                    >
-                      <i className="fas fa-eye"></i> 상세
-                    </button>
-                    <button
-                      onClick={() => handleDelete(history.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <i className="fas fa-trash"></i> 삭제
-                    </button>
-                  </td>
-                  </tr>
-                ))}
-                {filteredHistories.length === 0 && (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <td
-                      colSpan="7"
-                      className="px-6 py-4 text-center text-sm text-gray-500"
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      검색 결과가 없습니다.
-                    </td>
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedHistories.length > 0 &&
+                          selectedHistories.length === currentHistories.length
+                        }
+                        onChange={(e) =>
+                          handleSelectAllHistories(e.target.checked)
+                        }
+                        className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
+                      />
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("id")}
+                    >
+                      <div className="flex items-center">
+                        ID {getSortIcon("id")}
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("userEmail")}
+                    >
+                      <div className="flex items-center">
+                        사용자 이메일 {getSortIcon("userEmail")}
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("analysisType")}
+                    >
+                      <div className="flex items-center">
+                        분석 유형 {getSortIcon("analysisType")}
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      사용자 만족도
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      분석 결과
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSort("createdAt")}
+                    >
+                      <div className="flex items-center">
+                        등록일 {getSortIcon("createdAt")}
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      관리
+                    </th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-
-            {/* 페이지네이션 (간단한 구현) */}
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    전체{" "}
-                    <span className="font-medium">
-                      {washingHistories.length}
-                    </span>{" "}
-                    항목 중{" "}
-                    <span className="font-medium">
-                      {filteredHistories.length}
-                    </span>{" "}
-                    항목 표시
-                  </p>
-                </div>
-                <div>
-                  <nav
-                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                    aria-label="Pagination"
-                  >
-                    <a
-                      href="#"
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                    >
-                      이전
-                    </a>
-                    <a
-                      href="#"
-                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      1
-                    </a>
-                    <a
-                      href="#"
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                    >
-                      다음
-                    </a>
-                  </nav>
-                </div>
-              </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentHistories.map((history) => (
+                    <tr key={history.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedHistories.includes(history.id)}
+                          onChange={() => handleSelectHistory(history.id)}
+                          className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
+                        {history.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-lg font-medium text-gray-900">
+                          {history.userEmail}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-lg leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {getAnalysisTypeText(history.analysisType)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {history.estimation === true ? (
+                          <span className="px-2 inline-flex text-lg leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            LIKE
+                          </span>
+                        ) : history.estimation === false ? (
+                          <span className="px-2 inline-flex text-lg leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            DISLIKE
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <div className="max-w-xs truncate">
+                          <span className="font-semibold">
+                            {history.stainCategory &&
+                              `${history.stainCategory}: `}
+                          </span>
+                          {history.analysis}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
+                        {formatDate(history.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-lg font-medium">
+                        <button
+                          onClick={() => openDetailModal(history)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-4"
+                        >
+                          상세
+                        </button>
+                        <button
+                          onClick={() => handleDelete(history.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          삭제
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {currentHistories.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan="8"
+                        className="px-6 py-4 text-center text-sm text-gray-500"
+                      >
+                        검색 결과가 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
+
+            {/* 페이지네이션 */}
+            {totalPages > 1 && (
+              <nav className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                <div className="flex-1 flex justify-between items-center">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-lg font-medium rounded-md ${
+                      currentPage === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    이전
+                  </button>
+                  <span className="text-lg text-gray-700">
+                    {currentPage} / {totalPages} 페이지
+                  </span>
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-lg font-medium rounded-md ${
+                      currentPage === totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    다음
+                  </button>
+                </div>
+              </nav>
+            )}
           </div>
         </main>
       </div>
@@ -517,23 +705,17 @@ const AdminWashingHistoriesPage = () => {
                         <div className="font-medium text-gray-500">
                           분석 유형
                         </div>
-                        <div>{currentHistory.analysis_type}</div>
+                        <div>{currentHistory.analysisType}</div>
                       </div>
                       <div className="text-sm">
-                        <div className="font-medium text-gray-500">사용자 이메일</div>
-                        <div>{currentHistory.user.name}</div>
-                      </div>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-500">연락처</div>
-                        <div>{currentHistory.user.phone_number}</div>
+                        <div className="font-medium text-gray-500">
+                          사용자 이메일
+                        </div>
+                        <div>{currentHistory.userEmail}</div>
                       </div>
                       <div className="text-sm">
                         <div className="font-medium text-gray-500">등록일</div>
-                        <div>{currentHistory.created_at}</div>
-                      </div>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-500">수정일</div>
-                        <div>{currentHistory.updated_at}</div>
+                        <div>{formatDate(currentHistory.createdAt)}</div>
                       </div>
                     </div>
                   </div>
@@ -544,12 +726,22 @@ const AdminWashingHistoriesPage = () => {
                   <div className="bg-gray-50 p-4 rounded-md">
                     <div className="text-sm mb-2">
                       <div className="font-medium text-gray-500">카테고리</div>
-                      <div>{currentHistory.result?.stain_category}</div>
+                      <div>{currentHistory.stainCategory}</div>
                     </div>
+                    {currentHistory.estimation && (
+                      <div className="text-sm mb-2">
+                        <div className="font-medium text-gray-500">
+                          세탁 예상
+                        </div>
+                        <div className="whitespace-pre-line">
+                          {currentHistory.estimation}
+                        </div>
+                      </div>
+                    )}
                     <div className="text-sm">
                       <div className="font-medium text-gray-500">분석 내용</div>
                       <div className="whitespace-pre-line">
-                        {currentHistory.result?.analysis}
+                        {currentHistory.analysis}
                       </div>
                     </div>
                   </div>
@@ -560,30 +752,34 @@ const AdminWashingHistoriesPage = () => {
                     이미지
                   </h4>
                   <div className="space-y-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-500 mb-1">
-                        얼룩 이미지
+                    {currentHistory.stainImageUrl && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-500 mb-1">
+                          얼룩 이미지
+                        </div>
+                        <div className="border rounded-md overflow-hidden">
+                          <img
+                            src={currentHistory.stainImageUrl}
+                            alt="얼룩 이미지"
+                            className="w-full h-40 object-cover"
+                          />
+                        </div>
                       </div>
-                      <div className="border rounded-md overflow-hidden">
-                        <img
-                          src={currentHistory.stain_image_url}
-                          alt="얼룩 이미지"
-                          className="w-full h-40 object-cover"
-                        />
+                    )}
+                    {currentHistory.labelImageUrl && (
+                      <div>
+                        <div className="text-sm font-medium text-gray-500 mb-1">
+                          라벨 이미지
+                        </div>
+                        <div className="border rounded-md overflow-hidden">
+                          <img
+                            src={currentHistory.labelImageUrl}
+                            alt="라벨 이미지"
+                            className="w-full h-40 object-cover"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-500 mb-1">
-                        라벨 이미지
-                      </div>
-                      <div className="border rounded-md overflow-hidden">
-                        <img
-                          src={currentHistory.label_image_url}
-                          alt="라벨 이미지"
-                          className="w-full h-40 object-cover"
-                        />
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

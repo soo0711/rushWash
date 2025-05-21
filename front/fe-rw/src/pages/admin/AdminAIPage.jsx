@@ -120,9 +120,9 @@ const AdminAIPage = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 상단 바 */}
-        <header className="bg-white shadow-sm z-10">
-          <div className="flex justify-between items-center px-6 py-4">
-            <h1 className="text-2xl font-semibold text-gray-800">
+        <header className="bg-white shadow-md z-10">
+          <div className="flex justify-between items-center px-8 py-6">
+            <h1 className="text-3xl font-semibold text-gray-800">
               AI 성능 및 관리
             </h1>
           </div>
