@@ -57,6 +57,15 @@ public class AnalysisService {
 
             AnalysisOnlyStainResponse response = objectMapper.readValue(jsonOutput, AnalysisOnlyStainResponse.class);
 
+            if (response.detectedStain() == null
+                    || response.detectedStain().top3() == null
+                    || response.detectedStain().top3().isEmpty()){
+                // 파일 지우기
+                fileManagerService.deleteFile(savedFilePath);
+                // 에러
+                throw new CustomException(ErrorCode.STAIN_IMAGE_REUPLOAD);
+            }
+
             // WashingHistory와 WashingResult 저장
             WashingHistory washingHistory = washingService.addWashingHistory(userId, AnalysisType.STAIN, savedFilePath);
             List<AnalysisOnlyStainResponse.WashingInstruction> instructions = response.washingInstructions();
@@ -96,6 +105,16 @@ public class AnalysisService {
             String jsonOutput = pythonOutput.substring(jsonStart);
 
             AnalysisOnlyLabelResponse response = objectMapper.readValue(jsonOutput, AnalysisOnlyLabelResponse.class);
+
+            if (response.detectedLabels() == null || response.detectedLabels().isEmpty()) {
+                fileManagerService.deleteFile(savedFilePath);
+                throw new CustomException(ErrorCode.LABEL_IMAGE_REUPLOAD);
+            }
+
+            if (response.labelExplanation() == null || response.labelExplanation().isEmpty()) {
+                fileManagerService.deleteFile(savedFilePath);
+                throw new CustomException(ErrorCode.LABEL_IMAGE_REUPLOAD);
+            }
 
             // WashingHistory와 WashingResult 저장
             WashingHistory washingHistory = washingService.addWashingHistory(userId, AnalysisType.LABEL, savedFilePath);
