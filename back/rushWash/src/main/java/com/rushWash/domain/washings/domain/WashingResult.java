@@ -26,12 +26,13 @@ public class WashingResult {
     private String stainCategory;
 
     private String analysis;
-
+/*
     @Column(name = "created_at", updatable = false)
     @UpdateTimestamp
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+ */
 
 }
