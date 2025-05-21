@@ -61,44 +61,54 @@ const StainAnalyzePage = () => {
     );
 
     if (response.data.success) {
-    const result = response.data.data;
+      const result = response.data.data;
 
-    // 1. top3 중복 제거
-    const uniqueStainTypes = [
-      ...new Set(result.detected_stain.top3.map((s) => s.class)),
-    ];
+      const uniqueStainTypes = [
+        ...new Set(result.detected_stain.top3.map((s) => s.class)),
+      ];
 
-    // 2. 얼룩별 세탁방법 매핑
-    const instructionsMap = {};
-    uniqueStainTypes.forEach((stain) => {
-      const matchingInstructions = result.washing_instructions
-        .filter((w) => w.class === stain)
-        .map((w) => ({
-          title: stain,
-          description: w.instruction,
-        }));
+      const instructionsMap = {};
+      uniqueStainTypes.forEach((stain) => {
+        const matchingInstructions = result.washing_instructions
+          .filter((w) => w.class === stain)
+          .map((w) => ({
+            title: stain,
+            description: w.instruction,
+          }));
+        instructionsMap[stain] = matchingInstructions;
+      });
 
-      instructionsMap[stain] = matchingInstructions;
-    });
-
-    // 3. 결과 페이지로 이동
-    navigate(`/analyze/result/stain`, {
-      state: {
-        analysisType: "stain",
-        analysisData: {
-          types: uniqueStainTypes,
-          instructionsMap: instructionsMap,
-        },  
-      },
-    });
-  } else {
+      navigate(`/analyze/result/stain`, {
+        state: {
+          analysisType: "stain",
+          analysisData: {
+            types: uniqueStainTypes,
+            instructionsMap: instructionsMap,
+          },
+        },
+      });
+    } else {
       alert(response.data.error?.message || "분석에 실패했습니다.");
+      // 🔁 분석 실패 시 초기화
+      setStainFile(null);
+      setStainImage(null);
+      setStainSelectedOption("이미지 업로드 형식 선택");
     }
   } catch (err) {
     console.error("분석 요청 실패:", err);
-    alert("서버 오류로 분석에 실패했습니다.");
-  } finally {
-    setLoading(false); 
+
+    const errorMessage =
+      err.response?.data?.error?.message || "서버 오류로 분석에 실패했습니다.";
+
+    alert(errorMessage);
+
+    // 상태 초기화
+    setStainFile(null);
+    setStainImage(null);
+    setStainSelectedOption("이미지 업로드 형식 선택");
+
+    // 새로고침
+    window.location.reload();
   }
 };
 
