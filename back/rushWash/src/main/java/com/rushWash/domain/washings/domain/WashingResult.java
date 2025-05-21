@@ -1,5 +1,6 @@
 package com.rushWash.domain.washings.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -21,6 +22,7 @@ public class WashingResult {
     private int id;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "washing_history_id", nullable = false)
+    @JsonIgnore
     private WashingHistory washingHistory;
     @Column(name = "stain_category")
     private String stainCategory;

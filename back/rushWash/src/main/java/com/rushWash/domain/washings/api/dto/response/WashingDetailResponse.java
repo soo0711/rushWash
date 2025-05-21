@@ -1,6 +1,7 @@
 package com.rushWash.domain.washings.api.dto.response;
 
 import com.rushWash.domain.washings.domain.AnalysisType;
+import com.rushWash.domain.washings.domain.WashingResult;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,11 +12,10 @@ public record WashingDetailResponse(
         String stainImageUrl,
         String labelImageUrl,
         AnalysisType analysisType,
-        String stainCategory,
-        String analysis,
-        boolean estimation,
-        LocalDateTime createdAt
+        Boolean estimation,
+        LocalDateTime createdAt,
 
+        List<WashingResult> washingList
 
 ) {
 }

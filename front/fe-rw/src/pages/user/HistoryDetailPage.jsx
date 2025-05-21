@@ -184,22 +184,19 @@ const HistoryDetailPage = () => {
 
           {/* 분석 결과 */}
           <div className="mb-6">
-            <h3 className="text-lg font-medium mb-2">분석 결과</h3>
-            <p className="text-gray-800 text-lg p-4 bg-gray-50 rounded-lg">
-              {detail.analysis}
-            </p>
-          </div>
-
-          {/* 얼룩 유형 */}
-          {detail.stainCategory && (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-2">얼룩 유형</h3>
-              <p className="text-gray-800 font-medium">
-                {detail.stainCategory}
+          <h3 className="text-lg font-medium mb-2">분석 결과</h3>
+          {detail.washingList.map((item, index) => (
+            <div key={item.id} className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500 mb-1">
+              {detail.analysisType === "STAIN" || detail.analysisType === "LABEL_AND_STAIN"
+                ? `${index + 1}번째로 확인된 얼룩`
+                : null}
               </p>
+              <p className="text-gray-800 font-semibold mb-2">💧 {item.stainCategory}</p>
+              <p className="text-gray-700 whitespace-pre-line">{item.analysis}</p>
             </div>
-          )}
-
+          ))}
+        </div>
           {/* 피드백 상태 */}
           <div className="pt-4 border-t border-gray-200">
             <h3 className="text-lg font-medium mb-2">피드백 상태</h3>
