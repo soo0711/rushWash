@@ -61,6 +61,14 @@ export const ADMIN_WASHINGS_API = {
   GET_GOOD: `${BASE_URL}/admin/washings/good`,
 };
 
+
+// 사용자 분석석 관련 API
+export const ANALYSIS_API = {
+  STAIN: `${BASE_URL}/analysis/stain`,
+  LABEL: `${BASE_URL}/analysis/label`,
+  STAIN_LABEL: `${BASE_URL}/analysis/stain-label`,
+};
+
 // 프록시 환경에서 사용할 경로 (package.json에 "proxy": "http://localhost:8080" 설정 필요)
 export const PROXY_API = {
   // 기존 사용자 관련 엔드포인트
