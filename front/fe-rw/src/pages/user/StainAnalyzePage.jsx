@@ -1,12 +1,21 @@
 import React, { useState, useRef } from "react";
 import Header from "../../components/common/Header";
-import { Link } from "react-router-dom";
+import { ANALYSIS_API, PROXY_API } from "../../constants/api";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 
 const StainAnalyzePage = () => {
   // 파일 입력 요소에 대한 참조 생성
   const stainFileInputRef = useRef(null);
   const stainCameraInputRef = useRef(null);
+  const navigate = useNavigate();
+  const [stainFile, setStainFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
+  //API URL 설정
+  const ANALYSIS_URL = ANALYSIS_API.STAIN;
+  
   // 업로드된 이미지 상태 관리
   const [stainImage, setStainImage] = useState(null);
 
@@ -18,9 +27,8 @@ const StainAnalyzePage = () => {
   const handleStainImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 이미지 미리보기를 위한 URL 생성
-      setStainImage(URL.createObjectURL(file));
-      // 성공적으로 이미지를 선택한 후, 드롭다운 값을 업데이트
+      setStainImage(URL.createObjectURL(file)); // 미리보기용
+      setStainFile(file); // 실제 API용
       setStainSelectedOption(
         e.target.accept.includes("image")
           ? "파일 선택"
@@ -28,6 +36,62 @@ const StainAnalyzePage = () => {
       );
     }
   };
+  const handleStainAnalysis = async () => {
+  if (!stainFile) {
+    alert("얼룩 이미지를 업로드해주세요.");
+    return;
+  }
+
+  setLoading(true);
+
+  const formData = new FormData();
+  formData.append("file", stainFile);
+
+  try {
+    const token = localStorage.getItem("accessToken");
+    const response = await axios.post(
+      ANALYSIS_URL,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      }
+    );
+
+    if (response.data.success) {
+      const result = response.data.data;
+
+      const topClass = result.detected_stain.top3[0]?.class || "알 수 없음";
+
+      const methods = result.washing_instructions
+        .filter((w) => w.class === topClass)
+        .map((w) => ({
+          title: w.instruction,
+          description: "",
+        }));
+
+      navigate(`/analyze/result/stain`, {
+        state: {
+          analysisType: "stain",
+          analysisData: {
+            type: topClass,
+            methods,
+          },
+        },
+      });
+    } else {
+      alert(response.data.error?.message || "분석에 실패했습니다.");
+    }
+  } catch (err) {
+    console.error("분석 요청 실패:", err);
+    alert("서버 오류로 분석에 실패했습니다.");
+  } finally {
+    setLoading(false); 
+  }
+};
+
 
   // 옵션 변경 시 실행할 동작
   const handleStainOptionChange = (e) => {
@@ -121,24 +185,20 @@ const StainAnalyzePage = () => {
         </div>
 
         {/* 분석 버튼 */}
-        <div className="mt-10">
-          <button
-            className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium"
-            onClick={() => {
-              // 이미지가 선택되었는지 확인
-              if (stainImage) {
-                // 실제로는 여기서 분석 로직을 실행하거나 다음 페이지로 이동
-                alert("얼룩 이미지 분석을 시작합니다!");
-                // 필요한 경우 여기에 페이지 이동 로직 추가
-                // navigate('/analyze/stain/result');
-              } else {
-                alert("얼룩 이미지를 업로드해주세요.");
-              }
-            }}
-          >
-            분석하기
-          </button>
-        </div>
+      <div className="mt-10">
+        <button
+          className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium disabled:opacity-50"
+          onClick={handleStainAnalysis}
+          disabled={loading} // 🔹 로딩 중엔 버튼 비활성화
+        >
+          {loading ? "분석 중..." : "분석하기"}
+        </button>
+
+        {/* 로딩 메시지 */}
+        {loading && (
+          <p className="text-center mt-3 text-gray-500 text-lg">잠시만 기다려주세요. 분석 중입니다...</p>
+        )}
+      </div>
       </div>
     </div>
   );
