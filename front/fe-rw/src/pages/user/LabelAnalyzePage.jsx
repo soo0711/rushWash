@@ -80,9 +80,19 @@ const LabelAnalyzePage = () => {
     }
   } catch (err) {
     console.error("분석 요청 실패:", err);
-    alert("서버 오류로 분석에 실패했습니다.");
-  } finally {
-    setLoading(false);
+
+    const errorMessage =
+      err.response?.data?.error?.message || "서버 오류로 분석에 실패했습니다.";
+
+    alert(errorMessage);
+
+    // 상태 초기화
+    setLabelFile(null);
+    setLabelImage(null);
+    setLabelSelectedOption("이미지 업로드 형식 선택");
+
+    // 새로고침
+    window.location.reload();
   }
 };
 
