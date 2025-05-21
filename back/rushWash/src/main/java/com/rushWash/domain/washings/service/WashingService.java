@@ -58,13 +58,12 @@ public class WashingService {
         return washingHistoryRepository.getWashingGoodList();
     }
 
-    public WashingHistory addWashingHistory(int userId, AnalysisType analysisType, String imageUrl, boolean estimation){
+    public WashingHistory addWashingHistory(int userId, AnalysisType analysisType, String imageUrl){
         WashingHistory washingHistory = washingHistoryRepository.save(
                 WashingHistory.builder()
                         .userId(userId)
                         .analysisType(analysisType)
                         .stainImageUrl(imageUrl)
-                        .estimation(estimation)
                         .build()
         );
         return washingHistory;

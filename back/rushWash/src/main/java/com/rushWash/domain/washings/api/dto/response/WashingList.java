@@ -8,7 +8,7 @@ public record WashingList(
         int washingHistoryId,
         AnalysisType analysisType,
         String analysis,
-        boolean estimation,
+        Boolean estimation,
         LocalDateTime createdAt
 ) {
 }
