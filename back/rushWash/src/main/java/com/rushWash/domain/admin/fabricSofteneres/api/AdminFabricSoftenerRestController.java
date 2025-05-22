@@ -7,7 +7,9 @@ import com.rushWash.domain.admin.fabricSofteneres.api.dto.request.AdminFabricSof
 import com.rushWash.domain.admin.fabricSofteneres.service.AdminFabricSoftenerService;
 import com.rushWash.domain.fabricSofteners.domain.FabricSoftener;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,17 +28,19 @@ public class AdminFabricSoftenerRestController {
 
     @PostMapping
     public ApiResponse<String> addFabricSoftener(
-            @RequestBody AdminFabricSoftenerRequest request){
-        adminFabricSoftenerService.addFabricSoftener(request.scentCategory(), request.brand(), request.productName());
+            @RequestPart("request") AdminFabricSoftenerRequest request,
+            @RequestPart("file") MultipartFile file){
+        adminFabricSoftenerService.addFabricSoftener(request.scentCategory(), request.brand(),request.productName(), file);
 
         return ApiResponse.ok("섬유유연제 생성 완료");
     }
 
     @PatchMapping
     public ApiResponse<String> updateFabricSoftenerByFabricSoftenerId(
-            @RequestBody AdminFabricSoftenerUpdateRequest request){
+            @RequestPart("request") AdminFabricSoftenerUpdateRequest request,
+            @RequestPart("file") MultipartFile file){
         adminFabricSoftenerService.updateFabricSoftenerByFabricSoftenerId(request.fabricSoftenerId(), request.scentCategory(),
-                request.brand(), request.productName());
+                request.brand(), request.productName(), file);
 
         return ApiResponse.ok("섬유유연제 업데이트 완료");
     }

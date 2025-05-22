@@ -25,6 +25,9 @@ public enum ErrorCode {
     STAIN_IMAGE_REUPLOAD(400, HttpStatus.BAD_REQUEST, "얼룩이 명확하게 보이도록 다시 촬영해 주세요."),
     LABEL_IMAGE_REUPLOAD(400, HttpStatus.BAD_REQUEST, "라벨이 명확하게 보이도록 다시 촬영해 주세요."),
 
+    // 파일
+    INVALID_FILE_NAME(400, HttpStatus.BAD_REQUEST, "유효하지 않은 파일 이름입니다."),
+
     // 500 Internal Server Error
     FILE_UPLOAD_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
     FILE_DELETE_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다."),
@@ -48,6 +51,7 @@ public enum ErrorCode {
 
     // 파일 관련 에러 코드
     FILE_SAVE_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다."),
+    DIRECTORY_CREATION_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR,"파일 저장 디렉토리 생성에 실패했습니다."),
 
     // 파이썬 실행 관련 에러 코드
     PYTHON_SCRIPT_EXECUTION_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파이썬 스크립트 실행에 실패했습니다."),
