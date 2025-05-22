@@ -184,4 +184,8 @@ public class UserService {
 
         userRepository.deleteById(userId);
     }
+
+    public int getUserCount() {
+        return (int)userRepository.count();
+    }
 }
