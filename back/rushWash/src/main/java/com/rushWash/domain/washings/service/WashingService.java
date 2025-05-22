@@ -2,6 +2,7 @@ package com.rushWash.domain.washings.service;
 
 import com.rushWash.common.response.CustomException;
 import com.rushWash.common.response.ErrorCode;
+import com.rushWash.domain.admin.dashboard.api.dto.response.washingDashboard;
 import com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse;
 import com.rushWash.domain.users.domain.User;
 import com.rushWash.domain.washings.api.dto.request.WashingEstimationRequest;
@@ -13,6 +14,7 @@ import com.rushWash.domain.washings.domain.WashingResult;
 import com.rushWash.domain.washings.domain.repository.WashingHistoryRepository;
 import com.rushWash.domain.washings.domain.repository.WashingResultRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -102,4 +104,11 @@ public class WashingService {
         );
     }
 
+    public int getWashingCount() {
+        return (int)washingHistoryRepository.count();
+    }
+
+    public List<washingDashboard> getAdminDashboardWashingList() {
+        return washingHistoryRepository.getAdminDashboardWashingList(PageRequest.of(0, 5));
+    }
 }

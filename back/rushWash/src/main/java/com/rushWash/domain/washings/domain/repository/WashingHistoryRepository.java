@@ -1,9 +1,11 @@
 package com.rushWash.domain.washings.domain.repository;
 
+import com.rushWash.domain.admin.dashboard.api.dto.response.washingDashboard;
 import com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse;
 import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
 import com.rushWash.domain.washings.api.dto.response.WashingList;
 import com.rushWash.domain.washings.domain.WashingHistory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -88,4 +90,19 @@ public interface WashingHistoryRepository extends JpaRepository<WashingHistory, 
     ORDER BY wh.createdAt DESC
     """)
     List<WashingListResponse> getWashingGoodList();
+
+    @Query("""
+    SELECT new com.rushWash.domain.admin.dashboard.api.dto.response.washingDashboard(
+        wh.id,
+        u.email,
+        wh.analysisType,
+        wh.estimation,
+        wh.createdAt
+    )
+    FROM WashingHistory wh
+    JOIN User u ON u.id = wh.userId
+    ORDER BY wh.createdAt DESC
+    """)
+    List<washingDashboard> getAdminDashboardWashingList(Pageable pageable);
+
 }

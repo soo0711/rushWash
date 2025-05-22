@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import axios from "axios";
+import { ADMIN_API, PROXY_API } from "../../constants/api";
 
 const AdminDashboardPage = () => {
+  const DASHBOARD = ADMIN_API.DASHBOARD;
   // 통계 데이터 상태
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -24,47 +26,23 @@ const AdminDashboardPage = () => {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // 최근 분석 내역 가져오기
-        const historiesResponse = await axios.get("/admin/washings", {
-          params: {
-            limit: 5,
-            sort: "createdAt:desc",
-          },
-        });
+        // 대시보드 데이터 API 호출 (단일 엔드포인트로 변경)
+        const dashboardResponse = await axios.get(DASHBOARD);
 
-        // 섬유유연제 데이터 가져오기 (전체 데이터를 가져와서 카테고리 분포도 계산)
-        const softenersResponse = await axios.get("/admin/fabric-softeners");
+        if (dashboardResponse.data.success) {
+          const data = dashboardResponse.data.data;
 
-        // 분석 내역 응답 처리
-        let recentHistories = [];
-        if (historiesResponse.data.success) {
-          // API 응답에서 필요한 데이터 추출 및 형식 변환
-          recentHistories = historiesResponse.data.data.map((item) => ({
+          // 최근 분석 내역 처리
+          const recentHistories = data.washingHistory ? data.washingHistory.map((item) => ({
             id: item.washingHistoryId,
-            user_id: item.userEmail, // userEmail을 사용자 ID로 표시
-            analysis_type: item.analysisType.toLowerCase(), // 대소문자 맞춤
-            created_at: formatDate(item.createdAt), // 날짜 포맷팅
-            stain_category: item.stainCategory,
-            estimation: item.estimation, // boolean 타입
-          }));
-        } else {
-          console.error(
-            historiesResponse.data.error?.message ||
-              "분석 내역을 불러올 수 없습니다."
-          );
-        }
+            user_id: item.userEmail,
+            analysis_type: item.analysisType.toLowerCase(),
+            created_at: formatDate(item.createdAt),
+            estimation: item.estimation,
+          })) : [];
 
-        // 섬유유연제 응답 처리
-        let recentSofteners = [];
-        let softenerCategories = [];
-        let totalSofteners = 0;
-
-        if (softenersResponse.data.success) {
-          const allSofteners = softenersResponse.data.data;
-          totalSofteners = allSofteners.length;
-
-          // 최근 등록된 3개 섬유유연제만 선택
-          recentSofteners = allSofteners
+          // 섬유유연제 목록 처리
+          const recentSofteners = data.fabricSoftenerList ? data.fabricSoftenerList
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             .slice(0, 3)
             .map((item) => ({
@@ -73,46 +51,30 @@ const AdminDashboardPage = () => {
               brand: item.brand || "브랜드 없음",
               scent_category: item.scentCategory,
               created_at: formatDate(item.createdAt),
-            }));
+            })) : [];
 
-          // 향기 카테고리 분포 계산
-          const categories = {};
-
-          // 모든 섬유유연제의 향기 카테고리를 집계
-          allSofteners.forEach((item) => {
-            const category = item.scentCategory || "기타";
-            if (categories[category]) {
-              categories[category]++;
-            } else {
-              categories[category] = 1;
-            }
-          });
-
-          // 카테고리 객체를 배열로 변환
-          softenerCategories = Object.keys(categories).map((category) => ({
+          // 향기 카테고리 분포 처리 (API에서 직접 제공되는 scentCount 사용)
+          const softenerCategories = data.scentCount ? Object.keys(data.scentCount).map((category) => ({
             category: category,
-            count: categories[category],
-          }));
+            count: data.scentCount[category],
+          })) : [];
 
           // 카테고리 개수 기준으로 내림차순 정렬
           softenerCategories.sort((a, b) => b.count - a.count);
-        } else {
-          console.error(
-            softenersResponse.data.error?.message ||
-              "섬유유연제 데이터를 불러올 수 없습니다."
-          );
-        }
 
-        // 상태 업데이트
-        setStats({
-          totalUsers: 1245,
-          verifiedUsers: 982,
-          totalSofteners: totalSofteners,
-          totalHistories: 5872, // 실제로는 API에서 총 개수를 얻어와야 함
-          recentHistories: recentHistories,
-          softenerCategories: softenerCategories,
-          recentSofteners: recentSofteners,
-        });
+          // 상태 업데이트
+          setStats({
+            totalUsers: data.userCount || 0,
+            verifiedUsers: data.userCount || 0, // API에 별도 필드가 없으므로 동일하게 설정
+            totalSofteners: data.fabricSoftenerCount || 0,
+            totalHistories: data.washingHistoryCount || 0,
+            recentHistories: recentHistories,
+            softenerCategories: softenerCategories,
+            recentSofteners: recentSofteners,
+          });
+        } else {
+          throw new Error(dashboardResponse.data.error?.message || "데이터를 불러올 수 없습니다.");
+        }
       } catch (err) {
         console.error("API 호출 오류:", err);
         setError("서버 오류로 데이터를 불러올 수 없습니다.");
@@ -147,6 +109,19 @@ const AdminDashboardPage = () => {
       default:
         return type;
     }
+  };
+
+  // 향기 카테고리 한글 변환 함수
+  const getScentCategoryText = (category) => {
+    const categoryMap = {
+      'floral': '플로럴',
+      'refreshing': '상쾌한',
+      'woody': '우디',
+      'fruity': '과일',
+      'powdery': '파우더',
+      'citrus': '시트러스'
+    };
+    return categoryMap[category] || category;
   };
 
   // 통계 카드 컴포넌트
@@ -224,12 +199,6 @@ const AdminDashboardPage = () => {
               value={stats.totalUsers}
               icon={<i className="fas fa-users text-4xl"></i>}
               color="border-blue-500"
-            />
-            <StatCard
-              title="인증된 사용자"
-              value={stats.verifiedUsers}
-              icon={<i className="fas fa-user-check text-4xl"></i>}
-              color="border-green-500"
             />
             <StatCard
               title="섬유유연제 제품 수"
@@ -328,7 +297,7 @@ const AdminDashboardPage = () => {
                     <div key={index} className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">
-                          {category.category}
+                          {getScentCategoryText(category.category)}
                         </span>
                         <span className="text-sm text-gray-500">
                           {category.count}개 (
@@ -415,22 +384,22 @@ const AdminDashboardPage = () => {
                           <span
                             className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                             ${
-                              softener.scent_category === "꽃 향"
+                              softener.scent_category === "floral"
                                 ? "bg-green-100 text-green-800"
-                                : softener.scent_category === "우디 향"
+                                : softener.scent_category === "woody"
                                 ? "bg-purple-100 text-purple-800"
-                                : softener.scent_category === "시트러스 향"
+                                : softener.scent_category === "citrus"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : softener.scent_category === "상쾌한 향"
+                                : softener.scent_category === "refreshing"
                                 ? "bg-blue-100 text-blue-800"
-                                : softener.scent_category === "파우더 향"
+                                : softener.scent_category === "powdery"
                                 ? "bg-pink-100 text-pink-800"
-                                : softener.scent_category === "과일 향"
+                                : softener.scent_category === "fruity"
                                 ? "bg-red-100 text-red-800"
                                 : "bg-gray-100 text-gray-800"
                             }`}
                           >
-                            {softener.scent_category || "분류 없음"}
+                            {getScentCategoryText(softener.scent_category) || "분류 없음"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -441,7 +410,7 @@ const AdminDashboardPage = () => {
                   ) : (
                     <tr>
                       <td
-                        colSpan="5"
+                        colSpan="4"
                         className="px-6 py-4 text-center text-sm text-gray-500"
                       >
                         최근 등록된 섬유유연제가 없습니다.

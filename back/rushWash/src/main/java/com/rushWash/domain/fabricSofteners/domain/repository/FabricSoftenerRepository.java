@@ -14,4 +14,7 @@ public interface FabricSoftenerRepository extends JpaRepository<FabricSoftener,I
             "FROM FabricSoftener f WHERE f.scentCategory = :fabricScent")
     List<FabricSoftenerResponse> findFabricSoftenerListByScentCategory(@Param("fabricScent") String fabricScent);
     List<FabricSoftener> findAllByOrderByScentCategory();
+
+    @Query("SELECT fs.scentCategory, COUNT(fs) FROM FabricSoftener fs GROUP BY fs.scentCategory")
+    List<Object[]> countByScentCategory();
 }

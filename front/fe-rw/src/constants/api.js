@@ -6,6 +6,10 @@ export const BASE_URL = "http://localhost:8080";
 // 설정 (프록시 사용 시)
 export const useProxy = false; // true로 설정하면 상대 경로 사용
 
+export const ADMIN_API = {
+  DASHBOARD: `${BASE_URL}/admin/dashboard`
+}
+
 // 사용자 관련 API
 export const USER_API = {
   // 기존 사용자 관련 엔드포인트
