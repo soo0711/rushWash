@@ -6,6 +6,7 @@ from pathlib import Path
 from ultralytics import YOLO
 import torch
 import sys
+import random
 
 # ───── 경로 설정 ─────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -38,7 +39,7 @@ CLASS_CONF_TH = {
     "wine": 0.100,
 }
 GLOBAL_CONF = min(CLASS_CONF_TH.values())
-LABEL_CONF = 0.3
+LABEL_CONF = 0.5
 TOP_K = 3
 
 # ───── 모델 및 가이드 로딩 ─────
@@ -62,7 +63,7 @@ def predict_stain(image_path):
     )
     classes, probs, boxes = classes[keep], probs[keep], boxes[keep]
     if len(classes) == 0:
-        return []
+        return [], ""
 
     sorted_idx = probs.argsort()[::-1]
     top3 = [
@@ -71,7 +72,7 @@ def predict_stain(image_path):
     ]
     top1_idx = sorted_idx[0]
 
-    # 시각화 (모든 박스)
+    # 시각화
     img = cv2.imread(image_path)
     h, w = img.shape[:2]
     for i in range(len(classes)):
@@ -83,7 +84,6 @@ def predict_stain(image_path):
             img, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2
         )
 
-    # 저장
     name = Path(image_path).stem
     out_dir = os.path.join(BASE_DIR, "output", "stain")
     os.makedirs(os.path.join(out_dir, "images"), exist_ok=True)
@@ -92,7 +92,7 @@ def predict_stain(image_path):
     image_out = os.path.join(out_dir, "images", f"{name}_stain.jpg")
     label_out = os.path.join(out_dir, "labels", f"{name}.txt")
 
-    # Top-1 라벨만 저장
+    # Top-1 라벨 저장
     with open(label_out, "w") as f:
         i = top1_idx
         x1, y1, x2, y2 = map(int, boxes[i])
@@ -103,14 +103,14 @@ def predict_stain(image_path):
         f.write(f"{classes[i]} {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n")
 
     cv2.imwrite(image_out, img)
-    return top3
+    return top3, os.path.relpath(image_out, BASE_DIR).replace("\\", "/")
 
 
 # ───── symbol 예측 ─────
 def predict_label(image_path):
     result = label_model.predict(
         source=image_path,
-        imgsz=640,
+        imgsz=1600,
         conf=LABEL_CONF,
         iou=0.35,
         max_det=1000,
@@ -152,7 +152,8 @@ def predict_label(image_path):
             f.write(f"{cls_id} {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n")
 
     cv2.imwrite(image_out, img)
-    return list(set(label_model.names[cls] for cls in classes))
+    label_names = list(set(label_model.names[cls] for cls in classes))
+    return label_names, os.path.relpath(image_out, BASE_DIR).replace("\\", "/")
 
 
 # ───── 실행 진입점 ─────
@@ -165,24 +166,36 @@ def main():
     image_path = sys.argv[2]
 
     if analysis_type == "stain_only":
-        top3 = predict_stain(image_path)
+        top3, output_path = predict_stain(image_path)
         output = {
             "detected_stain": {
                 "top3": [{"class": c, "confidence": s} for c, s in top3]
             },
-            "washing_instructions": [
-                {"class": stain, "instruction": stain_guide.get(stain, "정보 없음")}
-                for stain, _ in top3
-                if stain in stain_guide
-            ],
+            "washing_instructions": [],
+            "output_image_path": output_path,
         }
+
+        for stain, _ in top3:
+            if stain in stain_guide and isinstance(stain_guide[stain], list):
+                methods = random.sample(
+                    stain_guide[stain], k=min(3, len(stain_guide[stain]))
+                )
+                output["washing_instructions"].append(
+                    {"class": stain, "instructions": methods}
+                )
+            else:
+                output["washing_instructions"].append(
+                    {"class": stain, "instructions": ["정보 없음"]}
+                )
+
         print(json.dumps(output, ensure_ascii=False, indent=2))
 
     elif analysis_type == "label_only":
-        labels = predict_label(image_path)
+        labels, output_path = predict_label(image_path)
         output = {
             "detected_labels": labels,
             "label_explanation": [label_guide.get(lbl, "정보 없음") for lbl in labels],
+            "output_image_path": output_path,
         }
         print(json.dumps(output, ensure_ascii=False, indent=2))
 
