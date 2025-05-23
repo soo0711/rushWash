@@ -175,18 +175,25 @@ def main():
             "output_image_path": output_path,
         }
 
+        seen_classes = set()
+
         for stain, _ in top3:
-            if stain in stain_guide and isinstance(stain_guide[stain], list):
-                methods = random.sample(
-                    stain_guide[stain], k=min(3, len(stain_guide[stain]))
-                )
-                output["washing_instructions"].append(
-                    {"class": stain, "instructions": methods}
-                )
+            if stain in seen_classes:
+                continue  # 중복 방지
+            seen_classes.add(stain)
+
+            methods = stain_guide.get(stain, [])
+            if isinstance(methods, list) and len(methods) > 0:
+                first = methods[0]
+                remaining = methods[1:]
+                rand = random.sample(remaining, k=min(2, len(remaining)))
+                combined = [first] + rand
             else:
-                output["washing_instructions"].append(
-                    {"class": stain, "instructions": ["정보 없음"]}
-                )
+                combined = ["정보 없음"]
+
+            output["washing_instructions"].append(
+                {"class": stain, "instructions": combined}
+            )
 
         print(json.dumps(output, ensure_ascii=False, indent=2))
 
