@@ -35,7 +35,8 @@ IMG_SIZE    = 1056    # 입력 이미지 크기
 CONF_THRESH = 0.5     # 전체 confidence threshold
 
 # ───── 성능 결과 저장 경로 ─────
-PERF_ROOT = os.path.join(BASE_DIR, "rushWash", "ai", "performance")
+# React public 폴더로 변경 (ai/evaluate_performance.py 기준)
+PERF_ROOT = os.path.abspath(os.path.join(BASE_DIR, os.pardir, "front", "fe-rw", "public", "performance"))
 
 def load_yolo(pt: str, want_gpu: bool = True):
     if want_gpu and torch.cuda.is_available():
