@@ -8,6 +8,9 @@ public record AnalysisOnlyLabelResponse(
         @JsonProperty("detected_labels")
         List<String> detectedLabels,
         @JsonProperty("label_explanation")
-        List<String> labelExplanation
+        List<String> labelExplanation,
+
+        @JsonProperty("output_image_path")
+        String outputImagePath
 ) {
 }
