@@ -74,11 +74,16 @@ public class AnalysisService {
             if (instructions == null) instructions = Collections.emptyList();
 
             for (var instruction : instructions) {
-                washingService.addWashingResult(
-                        washingHistory,
-                        instruction.clazz(),       // 분석 카테고리
-                        instruction.instruction()  // 분석 결과 (세탁법)
-                );
+                List<String> detailInstructions = instruction.instructions();
+                if (detailInstructions == null) detailInstructions = Collections.emptyList();
+
+                for (String detail : detailInstructions) {
+                    washingService.addWashingResult(
+                            washingHistory,
+                            instruction.clazz(),
+                            detail
+                    );
+                }
             }
 
             // JSON을 DTO로 변환

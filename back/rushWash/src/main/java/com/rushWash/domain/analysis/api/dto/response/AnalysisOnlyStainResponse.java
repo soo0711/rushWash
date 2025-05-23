@@ -8,7 +8,10 @@ public record AnalysisOnlyStainResponse(
         @JsonProperty("detected_stain")
         DetectedStain detectedStain,
         @JsonProperty("washing_instructions")
-        List<WashingInstruction> washingInstructions
+        List<WashingInstruction> washingInstructions,
+
+        @JsonProperty("output_image_path")
+        String outputImagePath
 ) {
     public record DetectedStain(
             List<Top3> top3
@@ -21,6 +24,6 @@ public record AnalysisOnlyStainResponse(
 
     public record WashingInstruction(
             @JsonProperty("class") String clazz,
-            String instruction
+            @JsonProperty("instructions") List<String> instructions
     ) {}
 }
