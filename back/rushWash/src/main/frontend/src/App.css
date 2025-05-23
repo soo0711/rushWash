@@ -1,0 +1,31 @@
+.App {
+  text-align: center;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+/* 필요한 경우 폰트 설정 */
+@font-face {
+  font-family: "Sandol";
+  src: url("./fonts/Sandol.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "YoonSSH";
+  src: url("./fonts/YoonSSH.ttf") format("truetype");
+}
+
+/* 산돌광수체 전용 클래스 */
+.sandol-font {
+  font-family: "Sandol", sans-serif;
+}
+
+/* YoonSSH 전용 클래스 */
+.yoon-font {
+  font-family: "YoonSSH", sans-serif;
+}
