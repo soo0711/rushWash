@@ -2,9 +2,8 @@ package com.rushWash.domain.washings.service;
 
 import com.rushWash.common.response.CustomException;
 import com.rushWash.common.response.ErrorCode;
-import com.rushWash.domain.admin.dashboard.api.dto.response.washingDashboard;
-import com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse;
-import com.rushWash.domain.users.domain.User;
+import com.rushWash.domain.api.admin.dashboard.api.dto.response.washingDashboard;
+import com.rushWash.domain.api.admin.washings.api.dto.response.WashingListResponse;
 import com.rushWash.domain.washings.api.dto.request.WashingEstimationRequest;
 import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
 import com.rushWash.domain.washings.api.dto.response.WashingList;

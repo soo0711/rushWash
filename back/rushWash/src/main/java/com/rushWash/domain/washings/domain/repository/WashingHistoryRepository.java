@@ -1,8 +1,7 @@
 package com.rushWash.domain.washings.domain.repository;
 
-import com.rushWash.domain.admin.dashboard.api.dto.response.washingDashboard;
-import com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse;
-import com.rushWash.domain.washings.api.dto.response.WashingDetailResponse;
+import com.rushWash.domain.api.admin.dashboard.api.dto.response.washingDashboard;
+import com.rushWash.domain.api.admin.washings.api.dto.response.WashingListResponse;
 import com.rushWash.domain.washings.api.dto.response.WashingList;
 import com.rushWash.domain.washings.domain.WashingHistory;
 import org.springframework.data.domain.Pageable;
