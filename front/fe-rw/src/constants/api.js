@@ -7,8 +7,8 @@ export const BASE_URL = "http://localhost:8080";
 export const useProxy = false; // true로 설정하면 상대 경로 사용
 
 export const ADMIN_API = {
-  DASHBOARD: `${BASE_URL}/admin/dashboard`
-}
+  DASHBOARD: `${BASE_URL}/admin/dashboard`,
+};
 
 // 사용자 관련 API
 export const USER_API = {
@@ -23,20 +23,11 @@ export const USER_API = {
   EMAIL_FIND: `${BASE_URL}/users/email`,
 };
 
-// 관리자 얼룩 제거제 관련 API
-export const ADMIN_STAIN_REMOVAL_API = {
-  GET_ALL: `${BASE_URL}/admin/stain-removal`,
-  CREATE: `${BASE_URL}/admin/stain-removal`,
-  DELETE: `${BASE_URL}/admin/stain-removal`,
-  UPDATE: `${BASE_URL}/admin/stain-removal`,
-};
-
-// 관리자 섬유유연제 관련 API
-export const ADMIN_FABRIC_SOFTENER_API = {
-  GET_ALL: `${BASE_URL}/admin/fabric-softeners`,
-  CREATE: `${BASE_URL}/admin/fabric-softeners`,
-  DELETE: `${BASE_URL}/admin/fabric-softeners`,
-  UPDATE: `${BASE_URL}/admin/fabric-softeners`,
+// 사용자 분석 관련 API
+export const ANALYSIS_API = {
+  STAIN: `${BASE_URL}/analysis/stain`,
+  LABEL: `${BASE_URL}/analysis/label`,
+  STAIN_LABEL: `${BASE_URL}/analysis/stain-label`,
 };
 
 // 세탁 관련 API
@@ -46,31 +37,39 @@ export const WASHING_API = {
   GET_ALL: `${BASE_URL}/washings`,
 };
 
-// 관리자 사용자 관련 API
-export const ADMIN_USERS_API = {
-  GET_ALL: `${BASE_URL}/admin/users`,
-  DELETE: `${BASE_URL}/admin/users`,
-  UPDATE: `${BASE_URL}/admin/users`,
-};
-
 // 섬유유연제 향기 관련 API
 export const FABRIC_SOFTENER_API = {
   GET_BY_SCENT: `${BASE_URL}/fabric-softeners/{fabricScent}`,
 };
 
-// 관리자 세탁 관련 API
-export const ADMIN_WASHINGS_API = {
-  GET_ALL: `${BASE_URL}/admin/washings`,
-  DELETE: `${BASE_URL}/admin/washings`,
-  GET_GOOD: `${BASE_URL}/admin/washings/good`,
+// 관리자 얼룩 제거제 관련 API
+export const ADMIN_STAIN_REMOVAL_API = {
+  GET_ALL: `${BASE_URL}/api/admin/stain-removal`,
+  CREATE: `${BASE_URL}/api/admin/stain-removal`,
+  DELETE: `${BASE_URL}/api/admin/stain-removal`,
+  UPDATE: `${BASE_URL}/api/admin/stain-removal`,
 };
 
+// 관리자 섬유유연제 관련 API
+export const ADMIN_FABRIC_SOFTENER_API = {
+  GET_ALL: `${BASE_URL}/api/admin/fabric-softeners`,
+  CREATE: `${BASE_URL}/api/admin/fabric-softeners`,
+  DELETE: `${BASE_URL}/api/admin/fabric-softeners`,
+  UPDATE: `${BASE_URL}/api/admin/fabric-softeners`,
+};
 
-// 사용자 분석석 관련 API
-export const ANALYSIS_API = {
-  STAIN: `${BASE_URL}/analysis/stain`,
-  LABEL: `${BASE_URL}/analysis/label`,
-  STAIN_LABEL: `${BASE_URL}/analysis/stain-label`,
+// 관리자 사용자 관련 API
+export const ADMIN_USERS_API = {
+  GET_ALL: `${BASE_URL}/api/admin/users`,
+  DELETE: `${BASE_URL}/api/admin/users`,
+  UPDATE: `${BASE_URL}/api/admin/users`,
+};
+
+// 관리자 세탁 관련 API
+export const ADMIN_WASHINGS_API = {
+  GET_ALL: `${BASE_URL}/api/admin/washings`,
+  DELETE: `${BASE_URL}/api/admin/washings`,
+  GET_GOOD: `${BASE_URL}/api/admin/washings/good`,
 };
 
 // 프록시 환경에서 사용할 경로 (package.json에 "proxy": "http://localhost:8080" 설정 필요)

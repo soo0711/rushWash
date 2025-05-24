@@ -61,9 +61,14 @@ const LoginPage = () => {
         localStorage.setItem("refreshToken", refreshToken);
         localStorage.setItem("userData", JSON.stringify(userData));
 
-        // 홈페이지로 이동
-        alert("로그인에 성공했습니다.");
-        navigate("/");
+        // 관리자 계정 확인 후 이동 분기
+        if (userData.email === "rushWashAdmin@gachon.ac.kr") {
+          alert("관리자로 로그인되었습니다.");
+          navigate("/admin/dashboard");
+        } else {
+          alert("로그인에 성공했습니다.");
+          navigate("/");
+        }
       } else {
         // 서버에서 success가 false인 경우
         setError(response.data.error?.message || "로그인에 실패했습니다.");
