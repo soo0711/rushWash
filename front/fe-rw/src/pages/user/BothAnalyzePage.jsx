@@ -1,68 +1,335 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Header from "../../components/common/Header";
-import { Link } from "react-router-dom";
+import { ANALYSIS_API } from "../../constants/api";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const BothAnalyzePage = () => {
-  // 파일 입력 요소에 대한 참조 생성
   const stainFileInputRef = useRef(null);
   const labelFileInputRef = useRef(null);
-  const stainCameraInputRef = useRef(null);
-  const labelCameraInputRef = useRef(null);
+  const navigate = useNavigate();
 
-  // 업로드된 이미지 상태 관리
+  // 얼룩 분석용 웹캠 요소들
+  const stainVideoRef = useRef(null);
+  const stainCanvasRef = useRef(null);
+
+  // 라벨 분석용 웹캠 요소들
+  const labelVideoRef = useRef(null);
+  const labelCanvasRef = useRef(null);
+
+  const [stainFile, setStainFile] = useState(null);
+  const [labelFile, setLabelFile] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [stainImage, setStainImage] = useState(null);
   const [labelImage, setLabelImage] = useState(null);
-
-  // 선택된 옵션 상태 관리
   const [stainSelectedOption, setStainSelectedOption] =
     useState("이미지 업로드 형식 선택");
   const [labelSelectedOption, setLabelSelectedOption] =
     useState("이미지 업로드 형식 선택");
 
-  // 이미지 업로드 핸들러
+  // 웹캠 상태 - 각각 독립적으로 관리
+  const [stainUseWebcam, setStainUseWebcam] = useState(false);
+  const [labelUseWebcam, setLabelUseWebcam] = useState(false);
+  const [stainCameraReady, setStainCameraReady] = useState(false);
+  const [labelCameraReady, setLabelCameraReady] = useState(false);
+
+  // 얼룩용 웹캠 시작
+  const startStainWebcam = async () => {
+    console.log("얼룩 카메라 시작 시도...");
+
+    if (
+      window.location.protocol !== "https:" &&
+      window.location.hostname !== "localhost"
+    ) {
+      alert("카메라 기능은 HTTPS 환경에서만 사용할 수 있습니다.");
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("이 브라우저는 카메라 기능을 지원하지 않습니다.");
+      return;
+    }
+
+    setStainUseWebcam(true);
+    setStainCameraReady(false);
+    setStainImage(null);
+    setStainFile(null);
+
+    setTimeout(async () => {
+      try {
+        if (!stainVideoRef.current) {
+          console.error("stainVideoRef.current가 여전히 null입니다");
+          setStainUseWebcam(false);
+          return;
+        }
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          });
+        } catch (err) {
+          console.log("후면 카메라 실패, 기본 카메라로 시도...");
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          });
+        }
+
+        console.log("얼룩 카메라 스트림 획득 성공:", stream);
+
+        stainVideoRef.current.srcObject = stream;
+
+        stainVideoRef.current.onloadedmetadata = () => {
+          console.log("얼룩 비디오 메타데이터 로드됨");
+          setStainCameraReady(true);
+        };
+
+        stainVideoRef.current.oncanplay = () => {
+          console.log("얼룩 비디오 재생 준비됨");
+          setStainCameraReady(true);
+        };
+
+        try {
+          await stainVideoRef.current.play();
+        } catch (playErr) {
+          console.warn("얼룩 비디오 자동 재생 실패:", playErr);
+        }
+      } catch (err) {
+        console.error("얼룩 웹캠 접근 실패:", err);
+        let errorMessage = "카메라에 접근할 수 없습니다.";
+
+        if (err.name === "NotAllowedError") {
+          errorMessage =
+            "카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.";
+        } else if (err.name === "NotFoundError") {
+          errorMessage = "카메라를 찾을 수 없습니다.";
+        } else if (err.name === "NotSupportedError") {
+          errorMessage = "이 브라우저는 카메라 기능을 지원하지 않습니다.";
+        }
+
+        alert(errorMessage);
+        setStainUseWebcam(false);
+        setStainCameraReady(false);
+      }
+    }, 100);
+  };
+
+  // 라벨용 웹캠 시작
+  const startLabelWebcam = async () => {
+    console.log("라벨 카메라 시작 시도...");
+
+    if (
+      window.location.protocol !== "https:" &&
+      window.location.hostname !== "localhost"
+    ) {
+      alert("카메라 기능은 HTTPS 환경에서만 사용할 수 있습니다.");
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("이 브라우저는 카메라 기능을 지원하지 않습니다.");
+      return;
+    }
+
+    setLabelUseWebcam(true);
+    setLabelCameraReady(false);
+    setLabelImage(null);
+    setLabelFile(null);
+
+    setTimeout(async () => {
+      try {
+        if (!labelVideoRef.current) {
+          console.error("labelVideoRef.current가 여전히 null입니다");
+          setLabelUseWebcam(false);
+          return;
+        }
+
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          });
+        } catch (err) {
+          console.log("후면 카메라 실패, 기본 카메라로 시도...");
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          });
+        }
+
+        console.log("라벨 카메라 스트림 획득 성공:", stream);
+
+        labelVideoRef.current.srcObject = stream;
+
+        labelVideoRef.current.onloadedmetadata = () => {
+          console.log("라벨 비디오 메타데이터 로드됨");
+          setLabelCameraReady(true);
+        };
+
+        labelVideoRef.current.oncanplay = () => {
+          console.log("라벨 비디오 재생 준비됨");
+          setLabelCameraReady(true);
+        };
+
+        try {
+          await labelVideoRef.current.play();
+        } catch (playErr) {
+          console.warn("라벨 비디오 자동 재생 실패:", playErr);
+        }
+      } catch (err) {
+        console.error("라벨 웹캠 접근 실패:", err);
+        let errorMessage = "카메라에 접근할 수 없습니다.";
+
+        if (err.name === "NotAllowedError") {
+          errorMessage =
+            "카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 권한을 허용해주세요.";
+        } else if (err.name === "NotFoundError") {
+          errorMessage = "카메라를 찾을 수 없습니다.";
+        } else if (err.name === "NotSupportedError") {
+          errorMessage = "이 브라우저는 카메라 기능을 지원하지 않습니다.";
+        }
+
+        alert(errorMessage);
+        setLabelUseWebcam(false);
+        setLabelCameraReady(false);
+      }
+    }, 100);
+  };
+
+  // 얼룩용 웹캠 정지
+  const stopStainWebcam = () => {
+    if (stainVideoRef.current && stainVideoRef.current.srcObject) {
+      const tracks = stainVideoRef.current.srcObject.getTracks();
+      tracks.forEach((track) => track.stop());
+      stainVideoRef.current.srcObject = null;
+    }
+    setStainUseWebcam(false);
+    setStainCameraReady(false);
+  };
+
+  // 라벨용 웹캠 정지
+  const stopLabelWebcam = () => {
+    if (labelVideoRef.current && labelVideoRef.current.srcObject) {
+      const tracks = labelVideoRef.current.srcObject.getTracks();
+      tracks.forEach((track) => track.stop());
+      labelVideoRef.current.srcObject = null;
+    }
+    setLabelUseWebcam(false);
+    setLabelCameraReady(false);
+  };
+
+  // 얼룩 사진 촬영
+  const captureStainPhoto = () => {
+    if (
+      !stainVideoRef.current ||
+      !stainCanvasRef.current ||
+      !stainCameraReady
+    ) {
+      alert("카메라가 준비되지 않았습니다.");
+      return;
+    }
+
+    const canvas = stainCanvasRef.current;
+    const video = stainVideoRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      alert("카메라가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          const file = new File([blob], "stain-camera-photo.jpg", {
+            type: "image/jpeg",
+          });
+          setStainFile(file);
+          setStainImage(URL.createObjectURL(blob));
+          stopStainWebcam();
+          setStainSelectedOption("사진 찍기");
+        }
+      },
+      "image/jpeg",
+      0.8
+    );
+  };
+
+  // 라벨 사진 촬영
+  const captureLabelPhoto = () => {
+    if (
+      !labelVideoRef.current ||
+      !labelCanvasRef.current ||
+      !labelCameraReady
+    ) {
+      alert("카메라가 준비되지 않았습니다.");
+      return;
+    }
+
+    const canvas = labelCanvasRef.current;
+    const video = labelVideoRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      alert("카메라가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0);
+
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          const file = new File([blob], "label-camera-photo.jpg", {
+            type: "image/jpeg",
+          });
+          setLabelFile(file);
+          setLabelImage(URL.createObjectURL(blob));
+          stopLabelWebcam();
+          setLabelSelectedOption("사진 찍기");
+        }
+      },
+      "image/jpeg",
+      0.8
+    );
+  };
+
   const handleStainImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 이미지 미리보기를 위한 URL 생성
       setStainImage(URL.createObjectURL(file));
-      // 성공적으로 이미지를 선택한 후, 드롭다운 값을 업데이트
-      setStainSelectedOption(
-        e.target.accept.includes("image")
-          ? "파일 선택"
-          : "사진 또는 비디오 찍기"
-      );
+      setStainFile(file);
+      setStainSelectedOption("파일 선택");
     }
   };
 
   const handleLabelImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 이미지 미리보기를 위한 URL 생성
       setLabelImage(URL.createObjectURL(file));
-      // 성공적으로 이미지를 선택한 후, 드롭다운 값을 업데이트
-      setLabelSelectedOption(
-        e.target.accept.includes("image")
-          ? "파일 선택"
-          : "사진 또는 비디오 찍기"
-      );
-    }
-  };
-
-  // 옵션 변경 시 실행할 동작
-  const handleStainOptionChange = (e) => {
-    const option = e.target.value;
-    setStainSelectedOption(option);
-
-    // 선택한 옵션에 따라 즉시 동작 수행
-    if (option === "사진 보관함") {
-      // 사진 보관함 열기 (파일 선택 다이얼로그와 유사)
-      stainFileInputRef.current.click();
-    } else if (option === "사진 또는 비디오 찍기") {
-      // 카메라 열기
-      stainCameraInputRef.current.click();
-    } else if (option === "파일 선택") {
-      // 파일 선택 다이얼로그 열기
-      stainFileInputRef.current.click();
+      setLabelFile(file);
+      setLabelSelectedOption("파일 선택");
     }
   };
 
@@ -70,23 +337,186 @@ const BothAnalyzePage = () => {
     const option = e.target.value;
     setLabelSelectedOption(option);
 
-    // 선택한 옵션에 따라 즉시 동작 수행
-    if (option === "사진 보관함") {
-      // 사진 보관함 열기 (파일 선택 다이얼로그와 유사)
-      labelFileInputRef.current.click();
-    } else if (option === "사진 또는 비디오 찍기") {
-      // 카메라 열기
-      labelCameraInputRef.current.click();
-    } else if (option === "파일 선택") {
-      // 파일 선택 다이얼로그 열기
-      labelFileInputRef.current.click();
+    if (labelUseWebcam) {
+      stopLabelWebcam();
+    }
+
+    if (option === "사진 보관함" || option === "파일 선택") {
+      setLabelImage(null);
+      setLabelFile(null);
+
+      if (labelFileInputRef.current) {
+        labelFileInputRef.current.value = "";
+        labelFileInputRef.current.click();
+      }
+    } else if (option === "사진 찍기") {
+      if (
+        window.location.protocol !== "https:" &&
+        window.location.hostname !== "localhost"
+      ) {
+        alert(
+          'HTTP 환경에서는 직접 카메라 촬영이 불가능합니다.\n"사진 보관함"을 선택하여 촬영된 사진을 업로드해주세요.'
+        );
+        setLabelSelectedOption("이미지 업로드 형식 선택");
+        return;
+      }
+      startLabelWebcam();
+    } else if (option === "이미지 업로드 형식 선택") {
+      setLabelImage(null);
+      setLabelFile(null);
     }
   };
+
+  const handleStainOptionChange = (e) => {
+    const option = e.target.value;
+    setStainSelectedOption(option);
+
+    if (stainUseWebcam) {
+      stopStainWebcam();
+    }
+
+    if (option === "사진 보관함" || option === "파일 선택") {
+      setStainImage(null);
+      setStainFile(null);
+
+      if (stainFileInputRef.current) {
+        stainFileInputRef.current.value = "";
+        stainFileInputRef.current.click();
+      }
+    } else if (option === "사진 찍기") {
+      if (
+        window.location.protocol !== "https:" &&
+        window.location.hostname !== "localhost"
+      ) {
+        alert(
+          'HTTP 환경에서는 직접 카메라 촬영이 불가능합니다.\n"사진 보관함"을 선택하여 촬영된 사진을 업로드해주세요.'
+        );
+        setStainSelectedOption("이미지 업로드 형식 선택");
+        return;
+      }
+      startStainWebcam();
+    } else if (option === "이미지 업로드 형식 선택") {
+      setStainImage(null);
+      setStainFile(null);
+    }
+  };
+
+  const handleBothAnalysis = async () => {
+    if (!stainFile || !labelFile) {
+      alert("얼룩과 라벨 이미지를 모두 업로드해주세요.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 얼룩 분석
+      const stainFormData = new FormData();
+      stainFormData.append("file", stainFile);
+
+      // 라벨 분석
+      const labelFormData = new FormData();
+      labelFormData.append("file", labelFile);
+
+      const token = localStorage.getItem("accessToken");
+      const headers = {
+        "Content-Type": "multipart/form-data",
+        Authorization: token ? `Bearer ${token}` : "",
+      };
+
+      const [stainResponse, labelResponse] = await Promise.all([
+        axios.post(ANALYSIS_API.STAIN, stainFormData, { headers }),
+        axios.post(ANALYSIS_API.LABEL, labelFormData, { headers }),
+      ]);
+
+      if (stainResponse.data.success && labelResponse.data.success) {
+        const stainResult = stainResponse.data.data;
+        const labelResult = labelResponse.data.data;
+
+        // 얼룩 결과 처리
+        const uniqueStainTypes = [
+          ...new Set(stainResult.detected_stain.top3.map((s) => s.class)),
+        ];
+
+        const stainInstructionsMap = {};
+        uniqueStainTypes.forEach((stain) => {
+          const matchingInstructions = stainResult.washing_instructions
+            .filter((w) => w.class === stain)
+            .map((w) => ({
+              title: stain,
+              description: w.instruction,
+            }));
+          stainInstructionsMap[stain] = matchingInstructions;
+        });
+
+        // 라벨 결과 처리
+        const detectedLabels = labelResult.detected_labels || [];
+        const labelExplanation = labelResult.label_explanation || [];
+
+        const labelMethods = detectedLabels.map((label, index) => ({
+          title: label,
+          description: labelExplanation[index] || "",
+        }));
+
+        navigate(`/analyze/result/both`, {
+          state: {
+            analysisType: "both",
+            analysisData: {
+              stain: {
+                types: uniqueStainTypes,
+                instructionsMap: stainInstructionsMap,
+              },
+              label: {
+                type: "라벨 분석 결과",
+                methods: labelMethods,
+              },
+            },
+          },
+        });
+      } else {
+        const stainError =
+          stainResponse.data.error?.message || "얼룩 분석에 실패했습니다.";
+        const labelError =
+          labelResponse.data.error?.message || "라벨 분석에 실패했습니다.";
+        alert(`분석 실패:\n${stainError}\n${labelError}`);
+
+        setStainFile(null);
+        setStainImage(null);
+        setStainSelectedOption("이미지 업로드 형식 선택");
+        setLabelFile(null);
+        setLabelImage(null);
+        setLabelSelectedOption("이미지 업로드 형식 선택");
+      }
+    } catch (err) {
+      console.error("분석 요청 실패:", err);
+      const errorMessage =
+        err.response?.data?.error?.message ||
+        "서버 오류로 분석에 실패했습니다.";
+      alert(errorMessage);
+
+      setStainFile(null);
+      setStainImage(null);
+      setStainSelectedOption("이미지 업로드 형식 선택");
+      setLabelFile(null);
+      setLabelImage(null);
+      setLabelSelectedOption("이미지 업로드 형식 선택");
+      window.location.reload();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 컴포넌트 언마운트 시 웹캠 정리
+  useEffect(() => {
+    return () => {
+      stopStainWebcam();
+      stopLabelWebcam();
+    };
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-gray-50 sandol-font">
       <Header />
-
       <div className="container mx-auto max-w-md px-4 py-8">
         <h1 className="text-4xl font-bold text-center mb-6">
           얼룩과 라벨 분석
@@ -104,11 +534,8 @@ const BothAnalyzePage = () => {
               <option value="이미지 업로드 형식 선택">
                 이미지 업로드 형식 선택
               </option>
-              <option value="사진 보관함">사진 보관함</option>
-              <option value="사진 또는 비디오 찍기">
-                사진 또는 비디오 찍기
-              </option>
-              <option value="파일 선택">파일 선택</option>
+              <option value="사진 보관함">사진 보관함에서 선택</option>
+              <option value="사진 찍기">사진 찍기 (HTTPS 환경 필요)</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
               <svg
@@ -127,27 +554,50 @@ const BothAnalyzePage = () => {
             </div>
           </div>
 
-          {/* 실제 파일 업로드 input (화면에는 보이지 않음) */}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleStainImageUpload}
-            className="hidden"
-            ref={stainFileInputRef}
-          />
-
-          {/* 카메라 input (화면에는 보이지 않음) */}
+          {/* 파일 업로드 input */}
           <input
             type="file"
             accept="image/*"
             capture="environment"
             onChange={handleStainImageUpload}
             className="hidden"
-            ref={stainCameraInputRef}
+            ref={stainFileInputRef}
           />
 
-          {/* 업로드된 이미지 미리보기 */}
-          {stainImage && (
+          {/* 얼룩용 웹캠 화면 */}
+          {stainUseWebcam && (
+            <div className="mt-4 relative">
+              <p className="text-sm text-gray-600 mb-2">
+                {!stainCameraReady ? "카메라 로딩 중..." : "카메라 준비됨"}
+              </p>
+              <video
+                ref={stainVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full rounded-md border bg-gray-100"
+                style={{ maxHeight: "400px" }}
+              />
+              <canvas ref={stainCanvasRef} className="hidden" />
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={captureStainPhoto}
+                  disabled={!stainCameraReady}
+                  className="flex-1 py-2 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400"
+                >
+                  📸 {stainCameraReady ? "촬영" : "준비 중..."}
+                </button>
+                <button
+                  onClick={stopStainWebcam}
+                  className="flex-1 py-2 bg-gray-500 text-white rounded-md font-medium"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
+
+          {stainImage && !stainUseWebcam && (
             <div className="mt-3">
               <img
                 src={stainImage}
@@ -170,11 +620,8 @@ const BothAnalyzePage = () => {
               <option value="이미지 업로드 형식 선택">
                 이미지 업로드 형식 선택
               </option>
-              <option value="사진 보관함">사진 보관함</option>
-              <option value="사진 또는 비디오 찍기">
-                사진 또는 비디오 찍기
-              </option>
-              <option value="파일 선택">파일 선택</option>
+              <option value="사진 보관함">사진 보관함에서 선택</option>
+              <option value="사진 찍기">사진 찍기 (HTTPS 환경 필요)</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
               <svg
@@ -192,27 +639,51 @@ const BothAnalyzePage = () => {
               </svg>
             </div>
           </div>
-          {/* 실제 파일 업로드 input (화면에는 보이지 않음) */}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleLabelImageUpload}
-            className="hidden"
-            ref={labelFileInputRef}
-          />
 
-          {/* 카메라 input (화면에는 보이지 않음) */}
+          {/* 파일 업로드 input */}
           <input
             type="file"
             accept="image/*"
             capture="environment"
             onChange={handleLabelImageUpload}
             className="hidden"
-            ref={labelCameraInputRef}
+            ref={labelFileInputRef}
           />
 
-          {/* 업로드된 이미지 미리보기 */}
-          {labelImage && (
+          {/* 라벨용 웹캠 화면 */}
+          {labelUseWebcam && (
+            <div className="mt-4 relative">
+              <p className="text-sm text-gray-600 mb-2">
+                {!labelCameraReady ? "카메라 로딩 중..." : "카메라 준비됨"}
+              </p>
+              <video
+                ref={labelVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full rounded-md border bg-gray-100"
+                style={{ maxHeight: "400px" }}
+              />
+              <canvas ref={labelCanvasRef} className="hidden" />
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={captureLabelPhoto}
+                  disabled={!labelCameraReady}
+                  className="flex-1 py-2 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400"
+                >
+                  📸 {labelCameraReady ? "촬영" : "준비 중..."}
+                </button>
+                <button
+                  onClick={stopLabelWebcam}
+                  className="flex-1 py-2 bg-gray-500 text-white rounded-md font-medium"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
+
+          {labelImage && !labelUseWebcam && (
             <div className="mt-3">
               <img
                 src={labelImage}
@@ -226,21 +697,18 @@ const BothAnalyzePage = () => {
         {/* 분석 버튼 */}
         <div className="mt-10">
           <button
-            className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium"
-            onClick={() => {
-              // 이미지가 모두 선택되었는지 확인
-              if (stainImage && labelImage) {
-                // 실제로는 여기서 분석 로직을 실행하거나 다음 페이지로 이동
-                alert("이미지 분석을 시작합니다!");
-                // 필요한 경우 여기에 페이지 이동 로직 추가
-                // navigate('/analyze/result');
-              } else {
-                alert("얼룩과 라벨 이미지를 모두 업로드해주세요.");
-              }
-            }}
+            className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium disabled:opacity-50"
+            onClick={handleBothAnalysis}
+            disabled={loading}
           >
-            분석하기
+            {loading ? "분석 중..." : "분석하기"}
           </button>
+
+          {loading && (
+            <p className="text-center mt-3 text-gray-500 text-lg">
+              잠시만 기다려주세요. 분석 중입니다...
+            </p>
+          )}
         </div>
       </div>
     </div>

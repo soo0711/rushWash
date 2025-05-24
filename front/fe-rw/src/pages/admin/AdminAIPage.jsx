@@ -24,57 +24,77 @@ const AdminAIPage = () => {
     return nameMap[englishName] || englishName;
   };
 
-  // JSON 데이터를 가공하는 함수
+  // JSON 데이터를 가공하는 함수 (새로운 구조에 맞게 수정)
   const processStainModelData = (jsonData) => {
     // 데이터 구조 확인을 위한 로그
     console.log("로드된 JSON 데이터:", jsonData);
 
-    // 필수 데이터 존재 여부 확인
-    if (!jsonData || !jsonData.per_class || !jsonData.overall) {
+    // 필수 데이터 존재 여부 확인 (새로운 구조에 맞게 수정)
+    if (
+      !jsonData ||
+      !jsonData.metrics ||
+      !jsonData.metrics.per_class ||
+      !jsonData.metrics.overall
+    ) {
       console.error("JSON 데이터 구조가 올바르지 않습니다:", jsonData);
       throw new Error("JSON 파일의 구조가 예상과 다릅니다.");
     }
 
+    const { metrics } = jsonData;
+
     // 카테고리별 성능 데이터 생성
-    const categoryData = Object.entries(jsonData.per_class).map(
+    const categoryData = Object.entries(metrics.per_class).map(
       ([category, data]) => ({
         model: "stain_model",
         category: getCategoryKoreanName(category),
         accuracy: (data.top1_acc * 100).toFixed(1),
+        samples: data.samples,
+        miss: data.miss,
+        top3_acc: (data.top3_acc * 100).toFixed(1),
       })
     );
 
     return {
       modelInfo: {
         name: "StainClassifier",
-        version: "v1.0", // JSON에 version 정보가 없어서 기본값 사용
+        version: jsonData.model_version || "v1.0",
+        model_type: jsonData.model_type || "stain",
+        weights_path: jsonData.weights_path || "N/A",
         last_updated: "2025-05-01", // 실제로는 파일 수정 날짜나 별도 필드에서 가져와야 함
         status: "active",
         description: "얼룩 분류 및 세탁 방법 추천 모델",
       },
       performance: {
-        accuracy: (jsonData.overall.accuracy * 100).toFixed(1),
-        precision: (jsonData.overall.precision * 100).toFixed(1),
-        recall: (jsonData.overall.recall * 100).toFixed(1),
-        prediction_count: jsonData.overall.samples,
+        accuracy: (metrics.overall.accuracy * 100).toFixed(1),
+        precision: (metrics.overall.precision * 100).toFixed(1),
+        recall: (metrics.overall.recall * 100).toFixed(1),
+        top1_acc: (metrics.overall.top1_acc * 100).toFixed(1),
+        top3_acc: (metrics.overall.top3_acc * 100).toFixed(1),
+        total_samples: metrics.overall.samples,
+        total_miss: metrics.overall.miss,
+        prediction_count: metrics.overall.samples,
         avg_response_time:
-          jsonData.overall.response_time.avg_per_image_s.toFixed(4),
+          metrics.overall.inference_time.avg_per_image_s.toFixed(4),
+        total_inference_time: metrics.overall.inference_time.total_s.toFixed(4),
       },
       categoryPerformance: categoryData,
     };
   };
 
-  // 세탁기호 JSON 데이터를 가공하는 함수
+  // 세탁기호 JSON 데이터를 가공하는 함수 (새로운 구조에 맞게 수정)
   const processFabricModelData = (jsonData) => {
     console.log("세탁기호 JSON 데이터:", jsonData);
 
-    if (!jsonData || !jsonData.per_class) {
+    // 필수 데이터 존재 여부 확인 (새로운 구조에 맞게 수정)
+    if (!jsonData || !jsonData.metrics || !jsonData.metrics.per_class) {
       console.error("세탁기호 JSON 데이터 구조가 올바르지 않습니다:", jsonData);
       throw new Error("세탁기호 JSON 파일의 구조가 예상과 다릅니다.");
     }
 
+    const { metrics } = jsonData;
+
     // 카테고리별 성능 데이터 생성
-    const categoryData = Object.entries(jsonData.per_class).map(
+    const categoryData = Object.entries(metrics.per_class).map(
       ([category, accuracy]) => ({
         model: "fabric_model",
         category: getSymbolKoreanName(category),
@@ -85,17 +105,21 @@ const AdminAIPage = () => {
     return {
       modelInfo: {
         name: "SymbolClassifier",
-        version: "v1.0",
+        version: jsonData.model_version || "v1.0",
+        model_type: jsonData.model_type || "symbol",
+        weights_path: jsonData.weights_path || "N/A",
         last_updated: "2025-04-15",
         status: "active",
         description: "세탁기호 분석 및 취급 방법 추천 모델",
       },
       performance: {
-        accuracy: (jsonData.accuracy * 100).toFixed(1),
-        precision: (jsonData.precision * 100).toFixed(1),
-        recall: (jsonData.recall * 100).toFixed(1),
-        prediction_count: Object.keys(jsonData.per_class).length * 100, // 추정값
-        avg_response_time: (jsonData.inference_time_ms / 1000).toFixed(4),
+        mAP50: (metrics.mAP50 * 100).toFixed(1),
+        mAP50_95: (metrics["mAP50-95"] * 100).toFixed(1),
+        precision: (metrics.precision * 100).toFixed(1),
+        recall: (metrics.recall * 100).toFixed(1),
+        prediction_count: Object.keys(metrics.per_class).length, // 클래스 수
+        avg_response_time: (metrics.inference_time_ms / 1000).toFixed(4),
+        inference_time_ms: metrics.inference_time_ms.toFixed(2),
       },
       categoryPerformance: categoryData,
     };
@@ -244,48 +268,49 @@ const AdminAIPage = () => {
         const dummyModelInfo = {
           stain_model: {
             name: "StainClassifier",
-            version: "1.0.3",
+            version: "v1.0",
             last_updated: "2025-05-01",
             status: "active",
             description: "얼룩 분류 및 세탁 방법 추천 모델",
           },
           fabric_model: {
-            name: "FabricAnalyzer",
-            version: "1.1.5",
+            name: "SymbolClassifier",
+            version: "v1.0",
             last_updated: "2025-04-15",
             status: "active",
-            description: "섬유 유형 분석 및 취급 방법 추천 모델",
+            description: "세탁기호 분석 및 취급 방법 추천 모델",
           },
         };
 
         const dummyModelPerformance = {
           stain_model: {
-            accuracy: 94.2,
-            precision: 93.7,
-            recall: 92.8,
-            prediction_count: 10453,
-            avg_response_time: 0.38,
+            accuracy: 86.8,
+            precision: 93.2,
+            recall: 86.8,
+            prediction_count: 91,
+            avg_response_time: 0.0258,
           },
           fabric_model: {
-            accuracy: 91.3,
-            precision: 90.5,
-            recall: 91.2,
-            prediction_count: 5389,
-            avg_response_time: 0.45,
+            mAP50: 69.7,
+            mAP50_95: 48.4,
+            precision: 68.4,
+            recall: 67.5,
+            prediction_count: 42,
+            avg_response_time: 0.0088,
+            inference_time_ms: 8.79,
           },
         };
 
         const dummyCategoryPerformance = [
-          { model: "stain_model", category: "음식물", accuracy: 95.3 },
-          { model: "stain_model", category: "기름", accuracy: 93.8 },
-          { model: "stain_model", category: "잉크", accuracy: 91.2 },
-          { model: "stain_model", category: "흙/먼지", accuracy: 94.5 },
-          { model: "stain_model", category: "화장품", accuracy: 92.1 },
-          { model: "fabric_model", category: "면", accuracy: 94.2 },
-          { model: "fabric_model", category: "울/캐시미어", accuracy: 89.3 },
-          { model: "fabric_model", category: "합성 섬유", accuracy: 91.7 },
-          { model: "fabric_model", category: "실크", accuracy: 88.5 },
-          { model: "fabric_model", category: "린넨", accuracy: 90.8 },
+          { model: "stain_model", category: "혈액", accuracy: 84.6 },
+          { model: "stain_model", category: "커피", accuracy: 93.3 },
+          { model: "stain_model", category: "흙/먼지", accuracy: 100.0 },
+          { model: "stain_model", category: "잉크", accuracy: 84.6 },
+          { model: "stain_model", category: "김치", accuracy: 61.5 },
+          { model: "stain_model", category: "립스틱", accuracy: 83.3 },
+          { model: "stain_model", category: "머스타드", accuracy: 100.0 },
+          { model: "stain_model", category: "기름", accuracy: 100.0 },
+          { model: "stain_model", category: "와인", accuracy: 90.0 },
         ];
 
         setModelInfo(dummyModelInfo);
@@ -367,15 +392,45 @@ const AdminAIPage = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">예측 횟수</div>
+                  <div className="text-sm text-gray-500">총 샘플 수</div>
                   <div className="font-medium">
-                    {modelPerformance.stain_model.prediction_count.toLocaleString()}
+                    {modelPerformance.stain_model.total_samples}
+                  </div>
+                </div>
+              </div>
+
+              {/* 추가 성능 지표 */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-500">Top-1 정확도</div>
+                    <div className="font-medium text-blue-600">
+                      {modelPerformance.stain_model.top1_acc}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Top-3 정확도</div>
+                    <div className="font-medium text-blue-600">
+                      {modelPerformance.stain_model.top3_acc}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">오분류 수</div>
+                    <div className="font-medium text-red-600">
+                      {modelPerformance.stain_model.total_miss}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">평균 추론 시간</div>
+                    <div className="font-medium">
+                      {modelPerformance.stain_model.avg_response_time}초
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 섬유 분석 모델 카드 */}
+            {/* 세탁기호 분석 모델 카드 */}
             <div className="bg-white rounded-md shadow p-6">
               <div className="flex justify-between items-start">
                 <div>
@@ -407,15 +462,45 @@ const AdminAIPage = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">정확도</div>
+                  <div className="text-sm text-gray-500">mAP@0.5</div>
                   <div className="font-medium text-green-600">
-                    {modelPerformance.fabric_model.accuracy}%
+                    {modelPerformance.fabric_model.mAP50}%
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">예측 횟수</div>
+                  <div className="text-sm text-gray-500">클래스 수</div>
                   <div className="font-medium">
-                    {modelPerformance.fabric_model.prediction_count.toLocaleString()}
+                    {modelPerformance.fabric_model.prediction_count}
+                  </div>
+                </div>
+              </div>
+
+              {/* 추가 성능 지표 */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-500">mAP@0.5:0.95</div>
+                    <div className="font-medium text-blue-600">
+                      {modelPerformance.fabric_model.mAP50_95}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">정밀도</div>
+                    <div className="font-medium text-blue-600">
+                      {modelPerformance.fabric_model.precision}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">재현율</div>
+                    <div className="font-medium text-orange-600">
+                      {modelPerformance.fabric_model.recall}%
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">추론 시간</div>
+                    <div className="font-medium">
+                      {modelPerformance.fabric_model.inference_time_ms}ms
+                    </div>
                   </div>
                 </div>
               </div>
@@ -486,7 +571,7 @@ const AdminAIPage = () => {
                 </div>
               </div>
 
-              {/* 섬유 분석 성능 통계 */}
+              {/* 세탁기호 분석 성능 통계 */}
               <div>
                 <h3 className="text-md font-medium text-gray-700 mb-3">
                   {modelInfo.fabric_model.name} 성능
@@ -494,9 +579,15 @@ const AdminAIPage = () => {
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <div className="text-sm text-gray-500">정확도</div>
+                      <div className="text-sm text-gray-500">mAP@0.5</div>
                       <div className="font-medium">
-                        {modelPerformance.fabric_model.accuracy}%
+                        {modelPerformance.fabric_model.mAP50}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">mAP@0.5:0.95</div>
+                      <div className="font-medium">
+                        {modelPerformance.fabric_model.mAP50_95}%
                       </div>
                     </div>
                     <div>
@@ -512,19 +603,30 @@ const AdminAIPage = () => {
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500">응답 시간</div>
+                      <div className="text-sm text-gray-500">추론 시간</div>
                       <div className="font-medium">
                         {modelPerformance.fabric_model.avg_response_time}초
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500">클래스 수</div>
+                      <div className="font-medium">
+                        {modelPerformance.fabric_model.prediction_count}개
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-3">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">
-                      카테고리별 정확도
+                      카테고리별 정확도 (상위 10개)
                     </h4>
                     {categoryPerformance
                       .filter((item) => item.model === "fabric_model")
+                      .sort(
+                        (a, b) =>
+                          parseFloat(b.accuracy) - parseFloat(a.accuracy)
+                      )
+                      .slice(0, 10)
                       .map((item, index) => (
                         <div key={index} className="mb-2">
                           <div className="flex justify-between text-sm mb-1">
