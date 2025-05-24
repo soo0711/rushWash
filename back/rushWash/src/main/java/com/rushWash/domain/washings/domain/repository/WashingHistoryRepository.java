@@ -50,7 +50,7 @@ public interface WashingHistoryRepository extends JpaRepository<WashingHistory, 
 
 
     @Query("""
-    SELECT new com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse(
+    SELECT new com.rushWash.domain.api.admin.washings.api.dto.response.WashingListResponse(
         wh.id,
         u.id,
         u.email,
@@ -70,7 +70,7 @@ public interface WashingHistoryRepository extends JpaRepository<WashingHistory, 
     List<WashingListResponse> getWashingList();
 
     @Query("""
-    SELECT new com.rushWash.domain.admin.washings.api.dto.response.WashingListResponse(
+    SELECT new com.rushWash.domain.api.admin.washings.api.dto.response.WashingListResponse(
         wh.id,
         u.id,
         u.email,
@@ -91,7 +91,7 @@ public interface WashingHistoryRepository extends JpaRepository<WashingHistory, 
     List<WashingListResponse> getWashingGoodList();
 
     @Query("""
-    SELECT new com.rushWash.domain.admin.dashboard.api.dto.response.washingDashboard(
+    SELECT new com.rushWash.domain.api.admin.dashboard.api.dto.response.washingDashboard(
         wh.id,
         u.email,
         wh.analysisType,

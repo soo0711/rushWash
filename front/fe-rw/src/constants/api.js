@@ -7,7 +7,7 @@ export const BASE_URL = "http://localhost:8080";
 export const useProxy = false; // true로 설정하면 상대 경로 사용
 
 export const ADMIN_API = {
-  DASHBOARD: `${BASE_URL}/admin/dashboard`,
+  DASHBOARD: `${BASE_URL}/api/admin/dashboard`,
 };
 
 // 사용자 관련 API
