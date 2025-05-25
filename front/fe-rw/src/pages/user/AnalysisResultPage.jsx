@@ -7,16 +7,20 @@ import axios from "axios";
 const AnalysisResultPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { analysisType, files } = location.state || {};
+  
+  // location.state에서 직접 분석 결과를 받아오는 경우와 API 호출하는 경우 구분
+  const { analysisType, analysisData: passedAnalysisData, files } = location.state || {};
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!passedAnalysisData); // 이미 데이터가 있으면 로딩 안함
   const [error, setError] = useState("");
-  const [analysisData, setAnalysisData] = useState(null);
+  const [analysisData, setAnalysisData] = useState(passedAnalysisData || null);
 
-  // API 호출 함수
+  // API 호출 함수 (필요한 경우에만)
   const fetchAnalysisResult = async () => {
-    if (!files || !analysisType) {
-      setError("분석할 파일이 없습니다.");
+    if (!files || !analysisType || passedAnalysisData) {
+      if (!passedAnalysisData && !files) {
+        setError("분석할 파일이 없습니다.");
+      }
       setLoading(false);
       return;
     }
@@ -65,47 +69,7 @@ const AnalysisResultPage = () => {
 
       if (response && response.data.success) {
         const result = response.data.data;
-
-        // 분석 타입에 따라 데이터 처리
-        if (analysisType === "stain") {
-          const uniqueStainTypes = [
-            ...new Set(result.detected_stain.top3.map((s) => s.class)),
-          ];
-
-          const instructionsMap = {};
-          uniqueStainTypes.forEach((stain) => {
-            const matchingInstructions = result.washing_instructions
-              .filter((w) => w.class === stain)
-              .map((w) => ({
-                title: stain,
-                description: w.instructions.join("\n"),
-              }));
-            instructionsMap[stain] = matchingInstructions;
-          });
-
-          setAnalysisData({
-            types: uniqueStainTypes,
-            instructionsMap: instructionsMap,
-            outputImagePath: result.output_image_path, // 이미지 경로 추가
-          });
-        } else if (analysisType === "label") {
-          const detectedLabels = result.detected_labels || [];
-          const labelExplanation = result.label_explanation || [];
-
-          const methods = detectedLabels.map((label, index) => ({
-            title: label,
-            description: labelExplanation[index] || "",
-          }));
-
-          setAnalysisData({
-            type: "라벨 분석 결과",
-            methods,
-            outputImagePath: result.output_image_path, // 이미지 경로 추가
-          });
-        } else if (analysisType === "both") {
-          // both 타입의 경우 서버 응답 구조에 따라 조정 필요
-          setAnalysisData(result);
-        }
+        processAnalysisData(result, analysisType);
       } else {
         setError(response?.data?.error?.message || "분석에 실패했습니다.");
       }
@@ -119,8 +83,55 @@ const AnalysisResultPage = () => {
     }
   };
 
+  // 분석 데이터 처리 함수
+  const processAnalysisData = (result, type) => {
+    if (type === "stain") {
+      const uniqueStainTypes = [
+        ...new Set(result.detected_stain.top3.map((s) => s.class)),
+      ];
+
+      const instructionsMap = {};
+      uniqueStainTypes.forEach((stain) => {
+        const matchingInstructions = result.washing_instructions
+          .filter((w) => w.class === stain)
+          .map((w) => ({
+            title: stain,
+            description: Array.isArray(w.instructions) 
+              ? w.instructions.join("\n") 
+              : (w.instruction || "세탁 방법 정보가 없습니다."),
+          }));
+        instructionsMap[stain] = matchingInstructions;
+      });
+
+      setAnalysisData({
+        types: uniqueStainTypes,
+        instructionsMap: instructionsMap,
+        outputImagePath: result.output_image_path,
+        detectedStains: result.detected_stain.top3, // 신뢰도 정보 포함
+      });
+    } else if (type === "label") {
+      const detectedLabels = result.detected_labels || [];
+      const labelExplanation = result.label_explanation || [];
+
+      const methods = detectedLabels.map((label, index) => ({
+        title: label,
+        description: labelExplanation[index] || "",
+      }));
+
+      setAnalysisData({
+        type: "라벨 분석 결과",
+        methods,
+        outputImagePath: result.output_image_path,
+      });
+    } else if (type === "both") {
+      setAnalysisData(result);
+    }
+  };
+
   useEffect(() => {
-    fetchAnalysisResult();
+    if (!passedAnalysisData) {
+      fetchAnalysisResult();
+    }
   }, []);
 
   // 뒤로가기 핸들러
@@ -143,16 +154,29 @@ const AnalysisResultPage = () => {
   };
 
   // 얼룩 결과 섹션 렌더링 함수
-  const renderStainResultSection = (title, stainType, instructions, index) => (
+  const renderStainResultSection = (title, stainType, instructions, confidence, index) => (
     <div key={`stain-${index}`} className="mb-4 p-4 bg-gray-50 rounded-lg">
       <p className="text-sm text-gray-500 mb-1">{title}</p>
-      <p className="text-gray-800 font-semibold mb-2">💧 {stainType}</p>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-gray-800 font-semibold">💧 {stainType}</p>
+        {confidence && (
+          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+            신뢰도: {(confidence * 100).toFixed(1)}%
+          </span>
+        )}
+      </div>
       <div className="space-y-2">
-        {instructions.map((instruction, instrIndex) => (
-          <p key={instrIndex} className="text-gray-700 text-sm">
-            • {instruction}
+        {Array.isArray(instructions) ? (
+          instructions.map((instruction, instrIndex) => (
+            <p key={instrIndex} className="text-gray-700 text-sm">
+              • {instruction}
+            </p>
+          ))
+        ) : (
+          <p className="text-gray-700 text-sm whitespace-pre-line">
+            {instructions}
           </p>
-        ))}
+        )}
       </div>
     </div>
   );
@@ -204,7 +228,7 @@ const AnalysisResultPage = () => {
             <p className="text-red-500 text-xl mb-4">{error}</p>
             <button
               onClick={handleGoBack}
-              className="text-blue-500 hover:underline"
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
             >
               뒤로가기
             </button>
@@ -224,7 +248,7 @@ const AnalysisResultPage = () => {
             <p className="text-xl mb-4">분석 결과가 없습니다.</p>
             <button
               onClick={handleGoBack}
-              className="text-blue-500 hover:underline"
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
             >
               뒤로가기
             </button>
@@ -259,121 +283,136 @@ const AnalysisResultPage = () => {
           </div>
 
           {/* 분석된 이미지 표시 */}
-          <div className="mb-6">
-            <h3 className="text-lg font-medium mb-2">분석된 이미지</h3>
-            {analysisType === "stain" && analysisData?.outputImagePath && (
+          {analysisData?.outputImagePath && (
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2">분석된 이미지</h3>
               <div className="mb-4">
                 <img
-                  src={analysisData.outputImagePath}
-                  alt="얼룩 분석 이미지"
+                  src={`/${analysisData.outputImagePath}`}
+                  alt="분석 이미지"
                   className="w-full rounded-lg shadow-sm"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    console.error('이미지 로드 실패:', analysisData.outputImagePath);
+                  }}
                 />
               </div>
-            )}
-
-            {analysisType === "label" && analysisData?.outputImagePath && (
-              <div className="mb-4">
-                <img
-                  src={analysisData.outputImagePath}
-                  alt="라벨 분석 이미지"
-                  className="w-full rounded-lg shadow-sm"
-                />
-              </div>
-            )}
-
-            {analysisType === "both" && analysisData && (
-              <div className="space-y-4">
-                {analysisData.stain?.outputImagePath && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-2">
-                      얼룩 분석 이미지
-                    </p>
-                    <img
-                      src={analysisData.stain.outputImagePath}
-                      alt="얼룩 분석 이미지"
-                      className="w-full rounded-lg shadow-sm"
-                    />
-                  </div>
-                )}
-                {analysisData.label?.outputImagePath && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-2">
-                      라벨 분석 이미지
-                    </p>
-                    <img
-                      src={analysisData.label.outputImagePath}
-                      alt="라벨 분석 이미지"
-                      className="w-full rounded-lg shadow-sm"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* 분석 결과 */}
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-4">분석 결과</h3>
 
+            {/* Stain 타입인 경우 얼룩 결과 표시 */}
+            {analysisType === "stain" && analysisData && (
+              <>
+                {analysisData.types && analysisData.types.map((stainType, index) => {
+                  const instructions = analysisData.instructionsMap[stainType] || [];
+                  const stainInstructions = 
+                    instructions.length > 0 && instructions[0].description
+                      ? instructions[0].description.split("\n").filter((inst) => inst.trim())
+                      : [`${stainType} 얼룩에 대한 세탁 방법 정보가 없습니다.`];
+
+                  // 해당 얼룩의 신뢰도 찾기
+                  const detectedStain = analysisData.detectedStains 
+                    ? analysisData.detectedStains.find(s => s.class === stainType)
+                    : null;
+
+                  return renderStainResultSection(
+                    `${index + 1}번째로 확인된 얼룩`,
+                    stainType,
+                    stainInstructions,
+                    detectedStain?.confidence,
+                    index
+                  );
+                })}
+
+                {/* 전체 감지된 얼룩 정보 표시 (중복 제거 전) */}
+                {analysisData.detectedStains && analysisData.detectedStains.length > 0 && (
+                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="text-md font-medium mb-3 text-blue-800">
+                      🔍 감지된 모든 얼룩 정보
+                    </h4>
+                    <div className="space-y-2">
+                      {analysisData.detectedStains.map((stain, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm">
+                          <span className="text-gray-700">{stain.class}</span>
+                          <span className="text-blue-600 font-semibold">
+                            {(stain.confidence * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Label 타입인 경우 라벨 결과 표시 */}
+            {analysisType === "label" && analysisData && (
+              <>
+                {renderLabelResultSection("감지된 세탁 기호", analysisData.methods)}
+              </>
+            )}
+
             {/* Both 타입인 경우 얼룩과 라벨 결과 모두 표시 */}
             {analysisType === "both" && analysisData && (
               <>
                 {/* 얼룩 분석 결과 */}
-                {analysisData.stain &&
-                  analysisData.stain.types &&
+                {analysisData.stain && analysisData.stain.types && 
                   analysisData.stain.types.map((stainType, index) => {
-                    const instructions =
-                      analysisData.stain.instructionsMap[stainType] || [];
+                    const instructions = analysisData.stain.instructionsMap[stainType] || [];
                     const stainInstructions =
                       instructions.length > 0 && instructions[0].description
-                        ? instructions[0].description
-                            .split("\n")
-                            .filter((inst) => inst.trim())
-                        : [];
+                        ? instructions[0].description.split("\n").filter((inst) => inst.trim())
+                        : [`${stainType} 얼룩에 대한 세탁 방법 정보가 없습니다.`];
 
                     return renderStainResultSection(
                       `${index + 1}번째로 확인된 얼룩`,
                       stainType,
                       stainInstructions,
+                      null,
                       index
                     );
-                  })}
+                  })
+                }
 
                 {/* 라벨 분석 결과 */}
-                {analysisData.label &&
-                  renderLabelResultSection(
-                    "라벨의 재질",
-                    analysisData.label.methods
-                  )}
+                {analysisData.label && 
+                  renderLabelResultSection("감지된 세탁 기호", analysisData.label.methods)
+                }
               </>
             )}
 
-            {/* Label 타입인 경우 라벨 결과만 표시 */}
-            {analysisType === "label" &&
-              analysisData &&
-              renderLabelResultSection("라벨의 재질", analysisData.methods)}
+            {/* 결과가 없는 경우 */}
+            {analysisType === "stain" && (!analysisData.types || analysisData.types.length === 0) && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">감지된 얼룩이 없습니다.</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  이미지를 다시 확인하거나 더 선명한 사진으로 다시 시도해보세요.
+                </p>
+              </div>
+            )}
 
-            {/* Stain 타입인 경우 얼룩 결과만 표시 */}
-            {analysisType === "stain" &&
-              analysisData &&
-              analysisData.types &&
-              analysisData.types.map((stainType, index) => {
-                const instructions =
-                  analysisData.instructionsMap[stainType] || [];
-                const stainInstructions =
-                  instructions.length > 0 && instructions[0].description
-                    ? instructions[0].description
-                        .split("\n")
-                        .filter((inst) => inst.trim())
-                    : [];
+            {analysisType === "label" && (!analysisData.methods || analysisData.methods.length === 0) && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">감지된 라벨이 없습니다.</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  라벨이 더 선명하게 보이는 사진으로 다시 시도해보세요.
+                </p>
+              </div>
+            )}
+          </div>
 
-                return renderStainResultSection(
-                  `${index + 1}번째로 확인된 얼룩`,
-                  stainType,
-                  stainInstructions,
-                  index
-                );
-              })}
+          {/* 다시 분석하기 버튼 */}
+          <div className="mt-8">
+            <button
+              onClick={handleGoBack}
+              className="w-full py-3 bg-blue-500 text-white rounded-md font-medium hover:bg-blue-600 transition-colors"
+            >
+              다시 분석하기
+            </button>
           </div>
         </div>
       </div>

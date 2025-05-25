@@ -206,14 +206,15 @@ const LabelAnalyzePage = () => {
         }));
 
         navigate(`/analyze/result/label`, {
-          state: {
-            analysisType: "label",
-            analysisData: {
-              type: "라벨 분석 결과",
-              methods,
-            },
+        state: {
+          analysisType: "label",
+          analysisData: {
+            type: "라벨 분석 결과",
+            methods,
+            outputImagePath: result.output_image_path, // 추가!
           },
-        });
+        },
+      });
       } else {
         alert(response.data.error?.message || "분석에 실패했습니다.");
         setLabelFile(null);
