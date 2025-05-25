@@ -104,7 +104,7 @@ def predict_stain(image_path):
         f.write(f"{classes[i]} {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n")
 
     cv2.imwrite(image_out, img)
-    return top3, os.path.relpath(image_out, OUT_DIR).replace("\\", "/")
+    return top3, os.path.relpath(image_out, os.path.dirname(BASE_DIR)).replace("\\", "/")
 
 
 # ───── symbol 예측 ─────
@@ -154,7 +154,7 @@ def predict_label(image_path):
 
     cv2.imwrite(image_out, img)
     label_names = list(set(label_model.names[cls] for cls in classes))
-    return label_names, os.path.relpath(image_out, OUT_DIR).replace("\\", "/")
+    return label_names, os.path.relpath(image_out, os.path.dirname(BASE_DIR)).replace("\\", "/")
 
 
 # ───── 실행 진입점 ─────
