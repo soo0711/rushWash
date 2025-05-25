@@ -99,7 +99,7 @@ const MainPage = () => {
         }}
       >
         {/* 물방울 효과 */}
-        {bubbles.map((bubble) => (
+        {bubbles.map((풍선껌) => (
           <div
             key={bubble.id}
             className="absolute rounded-full bg-white"
@@ -139,8 +139,8 @@ const MainPage = () => {
 
         {/* 콘텐츠 */}
         <div className="relative z-10">
-          <p className="m-0 font-bold text-5xl md:text-4xl">{menuName}</p>
-          <span className="text-xl md:text-xl text-gray-700 mt-1 px-1 leading-tight">
+          <p className="m-0 font-bold text-3xl md:text-4xl">{menuName}</p>
+          <span className="text-sm md:text-xl text-gray-700 mt-1 px-1 leading-tight">
             {description}
           </span>
         </div>

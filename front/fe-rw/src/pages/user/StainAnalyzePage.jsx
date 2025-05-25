@@ -8,6 +8,7 @@ const StainAnalyzePage = () => {
   const stainFileInputRef = useRef(null);
   const navigate = useNavigate();
   const videoRef = useRef(null);
+  const galleryInputRef = useRef(null);
   const canvasRef = useRef(null);
 
   const [stainFile, setStainFile] = useState(null);
@@ -253,6 +254,9 @@ const StainAnalyzePage = () => {
     if (stainFileInputRef.current) {
       stainFileInputRef.current.value = "";
     }
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = "";
+    }
   };
 
   const handleStainOptionChange = (e) => {
@@ -271,7 +275,9 @@ const StainAnalyzePage = () => {
 
       if (stainFileInputRef.current) {
         stainFileInputRef.current.value = "";
-        stainFileInputRef.current.click();
+      }
+      if (galleryInputRef.current) {
+        galleryInputRef.current.value = "";
       }
     } else if (option === "사진 찍기") {
       // HTTP 환경에서는 직접 카메라 접근 불가
@@ -357,20 +363,48 @@ const StainAnalyzePage = () => {
             disabled={loading}
           />
 
+          {stainSelectedOption === "사진 찍기" && !stainImage && !useWebcam && (
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  if (stainFileInputRef.current) {
+                    stainFileInputRef.current.click();
+                  }
+                }}
+                disabled={loading}
+                className="w-full py-3 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
+              >
+                📱 사진 직접 찍기
+              </button>
+            </div>
+          )}
+
+          {/* 사진 보관함용 input - capture 없음 */}
+          <input
+            type="file"
+            accept="image/*"
+            // capture 속성 없음! 갤러리만 열림
+            onChange={handleStainImageUpload}
+            className="hidden"
+            ref={galleryInputRef}
+            disabled={loading}
+          />
+
           {stainSelectedOption === "사진 보관함" &&
             !stainImage &&
             !useWebcam && (
               <div className="mt-4">
                 <button
                   onClick={() => {
-                    if (stainFileInputRef.current) {
-                      stainFileInputRef.current.click();
+                    if (galleryInputRef.current) {
+                      // 다른 ref 사용!
+                      galleryInputRef.current.click();
                     }
                   }}
                   disabled={loading}
                   className="w-full py-3 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
                 >
-                  📱 사진 보관함에서 선택
+                  📱 사진 보관함에서 가져오기
                 </button>
               </div>
             )}
