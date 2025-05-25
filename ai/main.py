@@ -7,6 +7,7 @@ from ultralytics import YOLO
 import torch
 import sys
 import random
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 # ───── 경로 설정 ─────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,6 +16,24 @@ LABEL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
 STAIN_GUIDE_PATH = os.path.join(BASE_DIR, "stain", "stain_washing_guidelines.json")
 LABEL_GUIDE_PATH = os.path.join(BASE_DIR, "symbol", "label_symbol_guide.json")
 OUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "back", "images"))
+
+# 로컬 LLM 모델 경로 설정 (사전에 다운로드된 모델 디렉토리)
+LLM_MODEL_DIR = os.path.join(BASE_DIR, "llm/kanana-nano-2.1b-base")
+# LLM 모델 로딩
+llm_tokenizer = AutoTokenizer.from_pretrained(LLM_MODEL_DIR, padding_side="left")
+llm_tokenizer.pad_token = llm_tokenizer.eos_token
+
+try:
+    llm_model = AutoModelForCausalLM.from_pretrained(
+        LLM_MODEL_DIR, torch_dtype=torch.bfloat16, trust_remote_code=True
+    ).to("cuda")
+except (RuntimeError, ValueError) as e:
+    print("⚠️ bfloat16 미지원 → float32로 재시도")
+    llm_model = AutoModelForCausalLM.from_pretrained(
+        LLM_MODEL_DIR, torch_dtype=torch.float32, trust_remote_code=True
+    ).to("cuda")
+
+
 # ───── 클래스 및 설정 ─────
 STAIN_CLASSES = [
     "blood",
@@ -41,6 +60,24 @@ CLASS_CONF_TH = {
 GLOBAL_CONF = min(CLASS_CONF_TH.values())
 LABEL_CONF = 0.5
 TOP_K = 3
+
+
+# ─── LLM 프롬프트 구성 ───
+def build_llm_prompt(stain_class, stain_advice, label_expls):
+    if not label_expls:
+        label_text = "세탁 기호가 감지되지 않았습니다."
+    else:
+        label_text = ", ".join(label_expls)
+
+    return (
+        f"아래는 옷에 묻은 얼룩과 해당 세탁 기호에 대한 설명입니다.\n"
+        f"- 얼룩 종류는 {stain_class}이며,\n"
+        f"- 해당 얼룩에 대해 추천되는 세탁법은 다음과 같습니다: {stain_advice}\n"
+        f"- 세탁 기호는 다음과 같습니다: {label_text}\n\n"
+        "이 정보를 바탕으로, 옷을 어떻게 세탁해야 하는지 부드럽고 자연스러운 한 문단으로 설명하세요. "
+        "사용자에게 말하듯 쓰되, 인사말 없이 직접적인 명령형으로 작성하세요.\n\n세탁 방법:"
+    )
+
 
 # ───── 모델 및 가이드 로딩 ─────
 stain_model = YOLO(STAIN_MODEL_PATH)
@@ -208,8 +245,64 @@ def main():
         }
         print(json.dumps(output, ensure_ascii=False, indent=2))
 
+    elif analysis_type == "stain_and_label":
+        if len(sys.argv) < 4:
+            print(
+                "⚠️ stain_and_label 분석에는 이미지 2장(stain, label) 경로가 필요합니다."
+            )
+            sys.exit(1)
+
+        stain_img = sys.argv[2]
+        label_img = sys.argv[3]
+
+        top3, stain_out = predict_stain(stain_img)
+        labels, label_out = predict_label(label_img)
+
+        if not top3:
+            print("❌ 얼룩이 감지되지 않았습니다.")
+            sys.exit(1)
+
+        stain_class = top3[0][0]
+        stain_advice = stain_guide.get(stain_class, ["정보 없음"])[0]
+        label_expls = [label_guide.get(lbl, "정보 없음") for lbl in labels]
+
+        prompt = build_llm_prompt(stain_class, stain_advice, label_expls)
+        input_ids = llm_tokenizer(prompt, return_tensors="pt").to("cuda")["input_ids"]
+
+        with torch.no_grad():
+            output = llm_model.generate(
+                input_ids,
+                max_new_tokens=256,
+                do_sample=True,
+                temperature=0.7,
+                top_p=0.9,
+                top_k=50,
+                pad_token_id=llm_tokenizer.eos_token_id,
+            )
+
+        decoded = (
+            llm_tokenizer.decode(output[0], skip_special_tokens=True)
+            .split("답변:")[-1]
+            .strip()
+        )
+        # "세탁 방법:" 이후 문장만 추출
+        if "세탁 방법:" in decoded:
+            decoded = decoded.split("세탁 방법:")[-1].strip()
+
+        output = {
+            "top1_stain": stain_class,
+            "washing_instruction": stain_advice,
+            "detected_labels": labels,
+            "label_explanation": label_expls,
+            "output_image_paths": {"stain": stain_out, "label": label_out},
+            "llm_generated_guide": decoded,
+        }
+
+        print(json.dumps(output, ensure_ascii=False, indent=2))
     else:
-        print("⚠️ analysis_type은 'stain_only' 또는 'label_only' 중 하나여야 합니다.")
+        print(
+            "⚠️ analysis_type은 'stain_only', 'label_only', 또는 'stain_and_label' 중 하나여야 합니다."
+        )
 
 
 if __name__ == "__main__":
