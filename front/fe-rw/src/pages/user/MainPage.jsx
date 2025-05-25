@@ -99,7 +99,7 @@ const MainPage = () => {
         }}
       >
         {/* 물방울 효과 */}
-        {bubbles.map((풍선껌) => (
+        {bubbles.map((bubble) => (
           <div
             key={bubble.id}
             className="absolute rounded-full bg-white"
