@@ -82,6 +82,10 @@ task buildReact(type: Exec) {
 	workingDir "$frontendDir"
 	inputs.dir "$frontendDir"
 	group = BasePlugin.BUILD_GROUP
+
+	// 환경 변수 설정 (여기가 핵심!)
+	environment 'CI', 'false'
+
 	if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
 		commandLine "npm.cmd", "run-script", "build"
 	} else {
