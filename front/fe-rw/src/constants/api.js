@@ -1,7 +1,7 @@
 // src/constants/api.js
 
 // 기본 API URL
-export const BASE_URL = "http://localhost:8080";
+export const BASE_URL = "http://ceprj.gachon.ac.kr:60019";
 
 // 설정 (프록시 사용 시)
 export const useProxy = false; // true로 설정하면 상대 경로 사용
