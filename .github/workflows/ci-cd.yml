@@ -5,7 +5,7 @@ on:
     branches: [ "main", "deploy-dev" ]
 
 jobs:
-  ci:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -42,14 +42,6 @@ jobs:
       - name: Build jar
         run: ./gradlew build -x test
         working-directory: back/rushWash
-
-  cd:
-    needs: ci
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.5.4
