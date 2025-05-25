@@ -371,7 +371,7 @@ const LabelAnalyzePage = () => {
                 disabled={loading}
                 className="w-full py-3 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
               >
-                📸 사진 직접 찍기
+                📱 사진 직접 찍기
               </button>
             </div>
           )}
@@ -387,9 +387,9 @@ const LabelAnalyzePage = () => {
                     }
                   }}
                   disabled={loading}
-                  className="w-full py-3 bg-green-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
+                  className="w-full py-3 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
                 >
-                  📱 사진 보관함에서 선택
+                  📱 모바일 사진 업로드 방식 선택
                 </button>
               </div>
             )}
