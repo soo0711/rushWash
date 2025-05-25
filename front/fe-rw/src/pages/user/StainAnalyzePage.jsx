@@ -197,37 +197,48 @@ const StainAnalyzePage = () => {
             .filter((w) => w.class === stain)
             .map((w) => ({
               title: stain,
-              description: w.instruction,
+              // instructions가 배열인지 문자열인지 확인
+              description: Array.isArray(w.instructions) 
+                ? w.instructions.join("\n")
+                : (w.instructions || w.instruction || "세탁 방법 정보가 없습니다."),
             }));
           instructionsMap[stain] = matchingInstructions;
         });
 
-        navigate(`/analyze/result/stain`, {
+        // 결과 페이지로 이동 (범용 결과 페이지 사용)
+        navigate("/analyze/result/stain", {
           state: {
             analysisType: "stain",
             analysisData: {
               types: uniqueStainTypes,
               instructionsMap: instructionsMap,
+              outputImagePath: result.output_image_path,
+              detectedStains: result.detected_stain.top3, // 신뢰도 정보 포함
             },
           },
         });
       } else {
         alert(response.data.error?.message || "분석에 실패했습니다.");
-        setStainFile(null);
-        setStainImage(null);
-        setStainSelectedOption("이미지 업로드 형식 선택");
+        resetAnalysisState();
       }
     } catch (err) {
       console.error("분석 요청 실패:", err);
       const errorMessage =
         err.response?.data?.error?.message || "서버 오류로 분석에 실패했습니다.";
       alert(errorMessage);
-      setStainFile(null);
-      setStainImage(null);
-      setStainSelectedOption("이미지 업로드 형식 선택");
-      window.location.reload();
+      resetAnalysisState();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 분석 상태 초기화 함수
+  const resetAnalysisState = () => {
+    setStainFile(null);
+    setStainImage(null);
+    setStainSelectedOption("이미지 업로드 형식 선택");
+    if (stainFileInputRef.current) {
+      stainFileInputRef.current.value = '';
     }
   };
 
@@ -271,6 +282,15 @@ const StainAnalyzePage = () => {
     };
   }, []);
 
+  // 이미지 미리보기 URL 정리
+  useEffect(() => {
+    return () => {
+      if (stainImage && stainImage.startsWith('blob:')) {
+        URL.revokeObjectURL(stainImage);
+      }
+    };
+  }, [stainImage]);
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-gray-50 sandol-font">
       <Header />
@@ -283,6 +303,7 @@ const StainAnalyzePage = () => {
               className="w-full p-3 border rounded-md appearance-none bg-white pr-8"
               value={stainSelectedOption}
               onChange={handleStainOptionChange}
+              disabled={loading}
             >
               <option value="이미지 업로드 형식 선택">이미지 업로드 형식 선택</option>
               <option value="사진 보관함">사진 보관함에서 선택</option>
@@ -308,6 +329,7 @@ const StainAnalyzePage = () => {
             onChange={handleStainImageUpload}
             className="hidden"
             ref={stainFileInputRef}
+            disabled={loading}
           />
 
           {/* 웹캠 화면 */}
@@ -328,14 +350,15 @@ const StainAnalyzePage = () => {
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={capturePhoto}
-                  disabled={!cameraReady}
-                  className="flex-1 py-2 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400"
+                  disabled={!cameraReady || loading}
+                  className="flex-1 py-2 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
                 >
                   📸 {cameraReady ? "촬영" : "준비 중..."}
                 </button>
                 <button
                   onClick={stopWebcam}
-                  className="flex-1 py-2 bg-gray-500 text-white rounded-md font-medium"
+                  disabled={loading}
+                  className="flex-1 py-2 bg-gray-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
                 >
                   취소
                 </button>
@@ -348,26 +371,62 @@ const StainAnalyzePage = () => {
               <img
                 src={stainImage}
                 alt="얼룩 이미지"
-                className="w-full h-auto rounded-md border"
+                className="w-full h-auto rounded-md border shadow-sm"
+                onError={(e) => {
+                  console.error('이미지 로드 실패:', stainImage);
+                  setStainImage(null);
+                  setStainFile(null);
+                  alert('이미지를 불러올 수 없습니다. 다른 이미지를 선택해주세요.');
+                }}
               />
+              {/* 이미지 정보 표시 */}
+              {stainFile && (
+                <div className="mt-2 text-xs text-gray-500">
+                  <p>파일명: {stainFile.name}</p>
+                  <p>크기: {(stainFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div className="mt-10">
           <button
-            className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium disabled:opacity-50"
+            className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-sky-300"
             onClick={handleStainAnalysis}
-            disabled={loading}
+            disabled={loading || !stainFile}
           >
-            {loading ? "분석 중..." : "분석하기"}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
+                분석 중...
+              </div>
+            ) : (
+              "분석하기"
+            )}
           </button>
 
           {loading && (
-            <p className="text-center mt-3 text-gray-500 text-lg">
-              잠시만 기다려주세요. 분석 중입니다...
-            </p>
+            <div className="text-center mt-3">
+              <p className="text-gray-500 text-lg mb-2">
+                잠시만 기다려주세요. 분석 중입니다...
+              </p>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{width: '60%'}}></div>
+              </div>
+            </div>
           )}
+
+          {/* 도움말 */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">💡 더 나은 분석을 위한 팁</h3>
+            <ul className="text-xs text-blue-700 space-y-1">
+              <li>• 얼룩이 선명하게 보이는 사진을 선택하세요</li>
+              <li>• 충분한 조명 아래에서 촬영하세요</li>
+              <li>• 얼룩 부분이 화면 중앙에 오도록 촬영하세요</li>
+              <li>• 흔들리지 않게 안정적으로 촬영하세요</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

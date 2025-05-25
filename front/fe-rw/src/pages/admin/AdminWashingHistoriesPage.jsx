@@ -35,21 +35,32 @@ const AdminWashingHistoriesPage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("/admin/washings");
+        const response = await axios.get(GET_ALL);
         if (response.data.success) {
-          const apiData = response.data.data.map((item) => ({
-            id: item.washingHistoryId,
-            userId: item.userId,
-            userEmail: item.userEmail,
-            analysisType: item.analysisType,
-            stainImageUrl: item.stainImageUrl,
-            labelImageUrl: item.labelImageUrl,
-            estimation: item.estimation,
-            createdAt: item.createdAt,
-            stainCategory: item.stainCategory,
-            analysis: item.analysis,
-          }));
-          setWashingHistories(apiData);
+          const grouped = {};
+          response.data.data.forEach((item) => {
+            const id = item.washingHistoryId;
+            if (!grouped[id]) {
+              grouped[id] = {
+                id: id,
+                userId: item.userId,
+                userEmail: item.userEmail,
+                analysisType: item.analysisType,
+                stainImageUrl: item.stain_image_url,
+                labelImageUrl: item.label_image_url,
+                createdAt: item.createdAt,
+                estimation: item.estimation,
+                results: [],
+              };
+            }
+            grouped[id].results.push({
+              category: item.stainCategory,
+              analysis: item.analysis,
+            });
+          });
+
+          setWashingHistories(Object.values(grouped));
+
         } else {
           console.error(response.data.error?.message || "불러오기 실패");
           setError(
@@ -71,8 +82,9 @@ const AdminWashingHistoriesPage = () => {
     if (!window.confirm("정말로 이 분석 내역을 삭제하시겠습니까?")) return;
 
     try {
-      const response = await axios.delete(`/admin/washings/${historyId}`);
-
+      const response = await axios.delete(`/api/admin/washings`, {
+        data: { washingHistoryId: historyId },
+      });
       if (response.data && response.data.success) {
         alert("삭제 완료되었습니다.");
         setWashingHistories((prev) =>
@@ -106,7 +118,7 @@ const AdminWashingHistoriesPage = () => {
     }
 
     try {
-      const response = await axios.delete("/admin/washings/bulk", {
+      const response = await axios.delete("/api/admin/washings/bulk", {
         data: { ids: selectedHistories },
       });
 
@@ -557,8 +569,8 @@ const AdminWashingHistoriesPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentHistories.map((history) => (
-                    <tr key={history.id} className="hover:bg-gray-50">
+                    {currentHistories.map((history, index) => (
+                      <tr key={`${history.id}-${index}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
@@ -674,7 +686,14 @@ const AdminWashingHistoriesPage = () => {
       </div>
 
       {/* 상세 정보 모달 */}
-      {isDetailModalOpen && currentHistory && (
+      {isDetailModalOpen && currentHistory && (() => {
+      const groupedResults = currentHistory.results.reduce((acc, cur) => {
+        if (!acc[cur.category]) acc[cur.category] = [];
+        acc[cur.category].push(cur.analysis);
+        return acc;
+      }, {});
+
+      return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full">
             <div className="p-6">
@@ -702,15 +721,11 @@ const AdminWashingHistoriesPage = () => {
                         <div>{currentHistory.id}</div>
                       </div>
                       <div className="text-sm">
-                        <div className="font-medium text-gray-500">
-                          분석 유형
-                        </div>
+                        <div className="font-medium text-gray-500">분석 유형</div>
                         <div>{currentHistory.analysisType}</div>
                       </div>
                       <div className="text-sm">
-                        <div className="font-medium text-gray-500">
-                          사용자 이메일
-                        </div>
+                        <div className="font-medium text-gray-500">사용자 이메일</div>
                         <div>{currentHistory.userEmail}</div>
                       </div>
                       <div className="text-sm">
@@ -723,27 +738,17 @@ const AdminWashingHistoriesPage = () => {
                   <h4 className="text-md font-medium text-gray-700 mt-4 mb-2">
                     분석 결과
                   </h4>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <div className="text-sm mb-2">
-                      <div className="font-medium text-gray-500">카테고리</div>
-                      <div>{currentHistory.stainCategory}</div>
-                    </div>
-                    {currentHistory.estimation && (
-                      <div className="text-sm mb-2">
-                        <div className="font-medium text-gray-500">
-                          세탁 예상
-                        </div>
-                        <div className="whitespace-pre-line">
-                          {currentHistory.estimation}
-                        </div>
+                  <div className="bg-gray-50 p-4 rounded-md space-y-3">
+                    {Object.entries(groupedResults).map(([category, analyses], idx) => (
+                      <div key={idx}>
+                        <p className="font-semibold text-blue-700">{category}</p>
+                        <ul className="list-disc list-inside text-gray-800 text-sm space-y-1 ml-2">
+                          {analyses.map((text, i) => (
+                            <li key={i}>{text}</li>
+                          ))}
+                        </ul>
                       </div>
-                    )}
-                    <div className="text-sm">
-                      <div className="font-medium text-gray-500">분석 내용</div>
-                      <div className="whitespace-pre-line">
-                        {currentHistory.analysis}
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
@@ -761,7 +766,8 @@ const AdminWashingHistoriesPage = () => {
                           <img
                             src={currentHistory.stainImageUrl}
                             alt="얼룩 이미지"
-                            className="w-full h-40 object-cover"
+                            className="w-full object-contain"
+                            style={{ maxHeight: "300px" }}
                           />
                         </div>
                       </div>
@@ -775,7 +781,8 @@ const AdminWashingHistoriesPage = () => {
                           <img
                             src={currentHistory.labelImageUrl}
                             alt="라벨 이미지"
-                            className="w-full h-40 object-cover"
+                            className="w-full object-contain"
+                            style={{ maxHeight: "300px" }}
                           />
                         </div>
                       </div>
@@ -795,7 +802,8 @@ const AdminWashingHistoriesPage = () => {
             </div>
           </div>
         </div>
-      )}
+      );
+    })()}
 
       {/* 이미지 모달 */}
       {isImageModalOpen && (
@@ -818,7 +826,7 @@ const AdminWashingHistoriesPage = () => {
                   src={currentImage.url}
                   alt={currentImage.title}
                   className="w-full object-contain"
-                  style={{ maxHeight: "70vh" }}
+                  style={{ maxHeight: "90vh" }}
                 />
               </div>
             </div>
