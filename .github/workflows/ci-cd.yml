@@ -26,7 +26,7 @@ jobs:
       - name: frontend 로 front 파일 복사
         run: |
           mkdir -p back/rushWash/src/main/frontend
-          cp -r front/* back/rushWash/src/main/frontend/
+          cp -r front/fe-rw/* back/rushWash/src/main/frontend/
 
       - name: Grant permission to Gradle
         run: chmod +x back/rushWash/gradlew
