@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 const BothAnalyzePage = () => {
   const stainFileInputRef = useRef(null);
   const labelFileInputRef = useRef(null);
+  const stainGalleryInputRef = useRef(null); // 얼룩 갤러리용 추가
+  const labelGalleryInputRef = useRef(null); // 라벨 갤러리용 추가
   const navigate = useNavigate();
 
   // 얼룩 분석용 웹캠 요소들
@@ -345,9 +347,12 @@ const BothAnalyzePage = () => {
       setLabelImage(null);
       setLabelFile(null);
 
+      // input 초기화만, 자동 클릭 제거
       if (labelFileInputRef.current) {
         labelFileInputRef.current.value = "";
-        labelFileInputRef.current.click();
+      }
+      if (labelGalleryInputRef.current) {
+        labelGalleryInputRef.current.value = "";
       }
     } else if (option === "사진 찍기") {
       if (
@@ -360,7 +365,7 @@ const BothAnalyzePage = () => {
         setLabelSelectedOption("이미지 업로드 형식 선택");
         return;
       }
-      startLabelWebcam();
+      // 웹캠은 버튼에서 시작
     } else if (option === "이미지 업로드 형식 선택") {
       setLabelImage(null);
       setLabelFile(null);
@@ -379,9 +384,12 @@ const BothAnalyzePage = () => {
       setStainImage(null);
       setStainFile(null);
 
+      // input 초기화만, 자동 클릭 제거
       if (stainFileInputRef.current) {
         stainFileInputRef.current.value = "";
-        stainFileInputRef.current.click();
+      }
+      if (stainGalleryInputRef.current) {
+        stainGalleryInputRef.current.value = "";
       }
     } else if (option === "사진 찍기") {
       if (
@@ -394,7 +402,7 @@ const BothAnalyzePage = () => {
         setStainSelectedOption("이미지 업로드 형식 선택");
         return;
       }
-      startStainWebcam();
+      // 웹캠은 버튼에서 시작
     } else if (option === "이미지 업로드 형식 선택") {
       setStainImage(null);
       setStainFile(null);
@@ -554,7 +562,7 @@ const BothAnalyzePage = () => {
             </div>
           </div>
 
-          {/* 파일 업로드 input */}
+          {/* 얼룩 사진 찍기용 input - capture 있음 */}
           <input
             type="file"
             accept="image/*"
@@ -563,6 +571,53 @@ const BothAnalyzePage = () => {
             className="hidden"
             ref={stainFileInputRef}
           />
+
+          {/* 얼룩 갤러리용 input - capture 없음 */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleStainImageUpload}
+            className="hidden"
+            ref={stainGalleryInputRef}
+          />
+
+          {/* 얼룩 사진 찍기 버튼 */}
+          {stainSelectedOption === "사진 찍기" &&
+            !stainImage &&
+            !stainUseWebcam && (
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    if (stainFileInputRef.current) {
+                      stainFileInputRef.current.click();
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full py-3 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
+                >
+                  📸 사진 직접 찍기
+                </button>
+              </div>
+            )}
+
+          {/* 얼룩 사진 보관함 버튼 */}
+          {stainSelectedOption === "사진 보관함" &&
+            !stainImage &&
+            !stainUseWebcam && (
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    if (stainGalleryInputRef.current) {
+                      stainGalleryInputRef.current.click();
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full py-3 bg-green-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
+                >
+                  📱 사진 보관함에서 선택
+                </button>
+              </div>
+            )}
 
           {/* 얼룩용 웹캠 화면 */}
           {stainUseWebcam && (
@@ -640,7 +695,7 @@ const BothAnalyzePage = () => {
             </div>
           </div>
 
-          {/* 파일 업로드 input */}
+          {/* 라벨 사진 찍기용 input - capture 있음 */}
           <input
             type="file"
             accept="image/*"
@@ -649,6 +704,53 @@ const BothAnalyzePage = () => {
             className="hidden"
             ref={labelFileInputRef}
           />
+
+          {/* 라벨 갤러리용 input - capture 없음 */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleLabelImageUpload}
+            className="hidden"
+            ref={labelGalleryInputRef}
+          />
+
+          {/* 라벨 사진 찍기 버튼 */}
+          {labelSelectedOption === "사진 찍기" &&
+            !labelImage &&
+            !labelUseWebcam && (
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    if (labelFileInputRef.current) {
+                      labelFileInputRef.current.click();
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full py-3 bg-blue-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
+                >
+                  📸 사진 직접 찍기
+                </button>
+              </div>
+            )}
+
+          {/* 라벨 사진 보관함 버튼 */}
+          {labelSelectedOption === "사진 보관함" &&
+            !labelImage &&
+            !labelUseWebcam && (
+              <div className="mt-4">
+                <button
+                  onClick={() => {
+                    if (labelGalleryInputRef.current) {
+                      labelGalleryInputRef.current.click();
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full py-3 bg-green-500 text-white rounded-md font-medium disabled:bg-gray-400 transition-colors"
+                >
+                  📱 사진 보관함에서 선택
+                </button>
+              </div>
+            )}
 
           {/* 라벨용 웹캠 화면 */}
           {labelUseWebcam && (
@@ -697,18 +799,46 @@ const BothAnalyzePage = () => {
         {/* 분석 버튼 */}
         <div className="mt-10">
           <button
-            className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium disabled:opacity-50"
+            className="w-full py-3 bg-sky-200 rounded-md text-2xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-sky-300"
             onClick={handleBothAnalysis}
-            disabled={loading}
+            disabled={loading || !stainFile || !labelFile}
           >
-            {loading ? "분석 중..." : "분석하기"}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
+                분석 중...
+              </div>
+            ) : (
+              "분석하기"
+            )}
           </button>
 
           {loading && (
-            <p className="text-center mt-3 text-gray-500 text-lg">
-              잠시만 기다려주세요. 분석 중입니다...
-            </p>
+            <div className="text-center mt-3">
+              <p className="text-gray-500 text-lg mb-2">
+                잠시만 기다려주세요. 분석 중입니다...
+              </p>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full animate-pulse"
+                  style={{ width: "60%" }}
+                ></div>
+              </div>
+            </div>
           )}
+
+          {/* 도움말 */}
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">
+              💡 더 나은 분석을 위한 팁
+            </h3>
+            <ul className="text-xs text-blue-700 space-y-1">
+              <li>• 얼룩이나 라벨이 선명하게 보이는 사진을 선택하세요</li>
+              <li>• 충분한 조명 아래에서 촬영하세요</li>
+              <li>• 분석할 부분이 화면 중앙에 오도록 촬영하세요</li>
+              <li>• 흔들리지 않게 안정적으로 촬영하세요</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
