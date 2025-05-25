@@ -29,15 +29,17 @@ jobs:
           cp -r front/* back/rushWash/src/main/frontend/
 
       - name: Grant permission to Gradle
-        run: chmod +x gradlew
+        run: chmod +x back/rushWash/gradlew
+        working-directory: .
 
       - name: application.yml 파일 설정
         run: |
-          mkdir -p src/main/resources
-          printf "%s" "${{ secrets.APPLICATION_YML }}" > src/main/resources/application.yml
+          mkdir -p back/rushWash/src/main/resources
+          printf "%s" "${{ secrets.APPLICATION_YML }}" > back/rushWash/src/main/resources/application.yml
 
       - name: Build jar
         run: ./gradlew build -x test
+        working-directory: back/rushWash
 
   cd:
     needs: ci
@@ -53,25 +55,23 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: 기존 ai 폴더 삭제
-        run: ssh -p 22 t25119@ceprj.gachon.ac.kr "rm -rf /home/t25119/v109.src/ai"
+        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "rm -rf /home/t25119/v109.src/ai"
 
       - name: 배포 back 디렉토리 만들기
-        run: ssh -p 22 t25119@ceprj.gachon.ac.kr "mkdir -p /home/t25119/v109.src/back"
+        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "mkdir -p /home/t25119/v109.src/back"
 
       - name: jar 학과 서버로 복사
-        run: scp -P 22 back/rushWash/build/libs/rushWash-0.0.1-SNAPSHOT.jar t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/back
+        run: scp -o StrictHostKeyChecking=no -P 22 back/rushWash/build/libs/rushWash-0.0.1-SNAPSHOT.jar t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/back
 
       - name: ai 폴더 복사
-        run: scp -r -P 22 ai t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/
+        run: scp -o StrictHostKeyChecking=no -r -P 22 ai t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/
 
       - name: 서버 실행
         run: |
-          ssh -p 22 t25119@ceprj.gachon.ac.kr "
+          ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "
             if [ -f /home/t25119/v109.src/app.pid ]; then
               kill \$(cat /home/t25119/v109.src/app.pid) || true
             fi
             nohup java -jar /home/t25119/v109.src/back/rushWash-0.0.1-SNAPSHOT.jar > /home/t25119/v109.src/app.log 2>&1 &
             echo \$! > /home/t25119/v109.src/app.pid
           "
-
-
