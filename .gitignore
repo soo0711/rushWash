@@ -36,6 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 *.yml
+!.github/workflows/*.yml
 
 ### python ###
 venv
