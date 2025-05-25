@@ -14,7 +14,7 @@ STAIN_MODEL_PATH = os.path.join(BASE_DIR, "stain", "stain_cls.pt")
 LABEL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
 STAIN_GUIDE_PATH = os.path.join(BASE_DIR, "stain", "stain_washing_guidelines.json")
 LABEL_GUIDE_PATH = os.path.join(BASE_DIR, "symbol", "label_symbol_guide.json")
-OUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "back", "images"))
+OUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "images"))
 # ───── 클래스 및 설정 ─────
 STAIN_CLASSES = [
     "blood",

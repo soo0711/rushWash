@@ -15,7 +15,7 @@ STAIN_MODEL_PATH = os.path.join(BASE_DIR, "stain", "stain_cls.pt")
 LABEL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
 STAIN_GUIDE_PATH = os.path.join(BASE_DIR, "stain", "stain_washing_guidelines.json")
 LABEL_GUIDE_PATH = os.path.join(BASE_DIR, "symbol", "label_symbol_guide.json")
-OUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "back", "images"))
+OUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "images"))
 
 # 로컬 LLM 모델 경로 설정 (사전에 다운로드된 모델 디렉토리)
 LLM_MODEL_DIR = os.path.join(BASE_DIR, "llm/kanana-nano-2.1b-base")
