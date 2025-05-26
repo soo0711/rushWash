@@ -186,30 +186,86 @@ const HistoryDetailPage = () => {
           <div className="mb-6">
           <h3 className="text-lg font-medium mb-2">분석 결과</h3>
           {/* AI 추천 종합 세탁 가이드 (guide category) */}
-          {detail.washingList.some((item) => item.stainCategory === "guide") && (
-            <div className="mt-6 p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-600 mb-2 font-medium">
-                🤖 AI 추천 종합 세탁 가이드
-              </p>
-              <p className="text-gray-700 text-sm whitespace-pre-line">
-                {
-                  detail.washingList.find((item) => item.stainCategory === "guide")
-                    ?.analysis
-                }
-              </p>
-            </div>
-          )}
-          {detail.washingList.map((item, index) => (
+          {detail.analysisType === "STAIN" && (
+  <div className="mb-6">
+    {detail.washingList.map((item, index) => (
+      <div key={item.id} className="mb-4 p-4 bg-gray-50 rounded-lg">
+        <p className="text-sm text-gray-500 mb-1">
+          {`${index + 1}번째로 확인된 얼룩`}
+        </p>
+        <p className="text-gray-800 font-semibold mb-2">💧 {item.stainCategory}</p>
+        <p className="text-gray-700 whitespace-pre-line">{item.analysis}</p>
+      </div>
+    ))}
+  </div>
+)}
+
+{detail.analysisType === "LABEL" && (
+  <div className="mb-6">
+    <h3 className="text-lg font-medium mb-2">감지된 세탁 기호</h3>
+    {detail.washingList.map((item) => (
+      <div key={item.id} className="mb-4 p-4 bg-gray-50 rounded-lg">
+        <p className="text-gray-800 font-semibold mb-2">🏷️ {item.stainCategory}</p>
+        <p className="text-gray-700 whitespace-pre-line">{item.analysis}</p>
+      </div>
+    ))}
+  </div>
+)}
+
+{detail.analysisType === "LABEL_AND_STAIN" && (
+  <div className="mb-6">
+    {/* 1. AI 가이드 */}
+    {detail.washingList.some(item => item.stainCategory === "guide") && (
+      <div className="mt-4 p-4 bg-green-50 rounded-lg">
+        <p className="text-sm text-green-600 mb-2 font-medium">
+          🤖 AI 추천 종합 세탁 가이드
+        </p>
+        <p className="text-gray-700 text-sm whitespace-pre-line">
+          {detail.washingList.find(item => item.stainCategory === "guide")?.analysis}
+        </p>
+      </div>
+    )}
+
+    {/* 2. 얼룩 한 개 */}
+    {(() => {
+      const stainList = detail.washingList.filter(
+        item => item.stainCategory !== "guide" && !item.stainCategory.startsWith("DN_") && !item.stainCategory.startsWith("iron") && !item.stainCategory.startsWith("dry_clean")
+      );
+      const stain = stainList[0];
+      return stain ? (
+        <div key={stain.id} className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-500 mb-1">감지된 얼룩</p>
+          <p className="text-gray-800 font-semibold mb-2">💧 {stain.stainCategory}</p>
+          <p className="text-gray-700 whitespace-pre-line">{stain.analysis}</p>
+        </div>
+      ) : null;
+    })()}
+
+    {/* 3. 라벨 여러 개 */}
+    {(() => {
+      const labelList = detail.washingList.filter(
+        item => item.stainCategory !== "guide" &&
+                (item.stainCategory.startsWith("DN_") ||
+                 item.stainCategory.startsWith("iron") ||
+                 item.stainCategory.startsWith("dry_clean"))
+      );
+
+      return labelList.length > 0 ? (
+        <div className="mb-4 mt-6">
+          <h4 className="text-md font-semibold mb-2 text-gray-800">감지된 세탁 기호</h4>
+          {labelList.map(item => (
             <div key={item.id} className="mb-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500 mb-1">
-              {detail.analysisType === "STAIN" || detail.analysisType === "LABEL_AND_STAIN"
-                ? `${index + 1}번째로 확인된 얼룩`
-                : null}
-              </p>
-              <p className="text-gray-800 font-semibold mb-2">💧 {item.stainCategory}</p>
+              <p className="text-gray-800 font-semibold mb-2">🏷️ {item.stainCategory}</p>
               <p className="text-gray-700 whitespace-pre-line">{item.analysis}</p>
             </div>
           ))}
+        </div>
+      ) : null;
+    })()}
+  </div>
+)}
+
+          
         </div>
           {/* 피드백 상태 */}
           <div className="pt-4 border-t border-gray-200">
