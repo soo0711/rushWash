@@ -17,7 +17,6 @@ import java.util.List;
 public class AdminWashingsService {
     private final WashingService washingService;
     private final FileManagerService fileManagerService;
-
     private final WashingHistoryRepository washingHistoryRepository;
 
     public List<WashingListResponse> getWashingList() {
