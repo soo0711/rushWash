@@ -12,6 +12,7 @@ import com.rushWash.domain.washings.domain.AnalysisType;
 import com.rushWash.domain.washings.domain.WashingHistory;
 import com.rushWash.domain.washings.service.WashingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AnalysisService {
 
@@ -165,8 +167,12 @@ public class AnalysisService {
                 throw new CustomException(ErrorCode.PYTHON_SCRIPT_OUTPUT_INVALID);
             }
             String jsonOutput = pythonOutput.substring(jsonStart);
+            log.info("Extracted JSON string:\n{}", jsonOutput);  // JSON 문자열 로그
 
             AnalysisStainAndLabelResponse response = objectMapper.readValue(jsonOutput, AnalysisStainAndLabelResponse.class);
+
+            log.info("Parsed detectedLabels: {}", response.detectedLabels());
+            log.info("Parsed labelExplanation: {}", response.labelExplanation());
 
             if (response.detectedLabels() == null || response.detectedLabels().isEmpty()) {
                 fileManagerService.deleteFile(savedFilePathStain);
