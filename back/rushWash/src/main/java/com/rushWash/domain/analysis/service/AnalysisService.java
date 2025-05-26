@@ -174,6 +174,10 @@ public class AnalysisService {
             log.info("Parsed detectedLabels: {}", response.detectedLabels());
             log.info("Parsed labelExplanation: {}", response.labelExplanation());
 
+            if (response.top1Stain() == null || response.top1Stain().isBlank()) {
+                throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
+            }
+
             if (response.detectedLabels() == null || response.detectedLabels().isEmpty()) {
                 fileManagerService.deleteFile(savedFilePathStain);
                 fileManagerService.deleteFile(savedFilePathLabel);
