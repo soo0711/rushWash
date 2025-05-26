@@ -30,11 +30,11 @@ public class AdminWashingsService {
         WashingHistory washingHistory = washingHistoryRepository.findById(washingHistoryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.WASHING_HISTORY_NOT_FOUNT));
         if(washingHistory.getLabelImageUrl() != null) {
-            fileManagerService.deleteFabricSoftenerFile(washingHistory.getLabelImageUrl());
+            fileManagerService.deleteFile(washingHistory.getLabelImageUrl());
         }
 
         if(washingHistory.getStainImageUrl() != null) {
-            fileManagerService.deleteFabricSoftenerFile(washingHistory.getStainImageUrl());
+            fileManagerService.deleteFile(washingHistory.getStainImageUrl());
         }
         washingHistoryRepository.deleteById(washingHistoryId);
     }
