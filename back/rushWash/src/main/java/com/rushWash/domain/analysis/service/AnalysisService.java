@@ -152,8 +152,6 @@ public class AnalysisService {
 
     @Transactional
     public AnalysisStainAndLabelResponse getStainAndLabelAnalysis(int userId, MultipartFile stainFile, MultipartFile labelFile){
-        log.info("getStainAndLabelAnalysis started for userId: {}", userId);
-
         // 1. 파일 저장
         SaveFileResult resultListStain = saveFileAndGetPaths(userId, stainFile);
         SaveFileResult resultListLabel = saveFileAndGetPaths(userId, labelFile);
@@ -164,58 +162,35 @@ public class AnalysisService {
         String savedFilePathLabel = resultListLabel.savedFilePath();
         String absoluteImagePathLabel = resultListLabel.absoluteFilePath();
 
-        log.info("Saved stain file: {}, absolute path: {}", savedFilePathStain, absoluteImagePathStain);
-        log.info("Saved label file: {}, absolute path: {}", savedFilePathLabel, absoluteImagePathLabel);
 
         // 2. 파이썬 불러오기
         String pythonOutput = executePythonScriptByStainLabel("stain_and_label", absoluteImagePathStain, absoluteImagePathLabel);
-        log.info("Python script output received, length: {}", pythonOutput.length());
 
         // 3. JSON 값 응답
         try {
             int jsonStart = pythonOutput.indexOf('{');
             if (jsonStart == -1) {
-                log.error("Invalid Python script output: JSON object start not found");
                 throw new CustomException(ErrorCode.PYTHON_SCRIPT_OUTPUT_INVALID);
             }
-
             String jsonOutput = pythonOutput.substring(jsonStart);
-            log.info("Extracted JSON string: {}", jsonOutput);
 
             AnalysisStainAndLabelResponse response = objectMapper.readValue(jsonOutput, AnalysisStainAndLabelResponse.class);
 
-            log.info("Parsed response - detectedLabels size: {}, labelExplanation size: {}",
-                    response.detectedLabels() != null ? response.detectedLabels().size() : 0,
-                    response.labelExplanation() != null ? response.labelExplanation().size() : 0);
-            log.debug("Top1Stain: {}", response.top1Stain());
-            log.debug("Label Explanation: {}", response.labelExplanation());
-
-            if (response.top1Stain() == null || response.top1Stain().isBlank()) {
-                log.warn("Top1Stain is null or blank, throwing reupload exception");
-                throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
-            }
-
             if (response.detectedLabels() == null || response.detectedLabels().isEmpty()) {
-                log.warn("Detected labels are null or empty, deleting files and throwing reupload exception");
                 fileManagerService.deleteFile(savedFilePathStain);
                 fileManagerService.deleteFile(savedFilePathLabel);
                 throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
             }
 
             if (response.labelExplanation() == null || response.labelExplanation().isEmpty()) {
-                log.warn("Label explanation is null or empty, deleting files and throwing reupload exception");
                 fileManagerService.deleteFile(savedFilePathStain);
                 fileManagerService.deleteFile(savedFilePathLabel);
                 throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
             }
 
             // WashingHistory와 WashingResult 저장
-            WashingHistory washingHistory = washingService.addWashingHistoryByStainAndLabelImage(
-                    userId, AnalysisType.LABEL_AND_STAIN, savedFilePathStain, savedFilePathLabel);
-            log.info("WashingHistory created with ID: {}", washingHistory.getId());
-
-            washingService.addWashingResult(washingHistory, response.top1Stain(), response.washingInstruction());
-            log.info("Added washing result for top1Stain: {}", response.top1Stain());
+            WashingHistory washingHistory = washingService.addWashingHistoryByStainAndLabelImage(userId, AnalysisType.LABEL_AND_STAIN,
+                    savedFilePathStain, savedFilePathLabel);
 
             List<String> detectedLabels = response.detectedLabels();
             List<String> labelExplanation = response.labelExplanation();
@@ -224,14 +199,11 @@ public class AnalysisService {
                 String category = detectedLabels.get(i);
                 String explanation = labelExplanation.get(i);
                 washingService.addWashingResult(washingHistory, category, explanation);
-                log.info("Added washing result - category: {}, explanation: {}", category, explanation);
             }
 
-            log.info("getStainAndLabelAnalysis completed successfully for userId: {}", userId);
-            return response;
 
+            return response;
         } catch (IOException e) {
-            log.error("JSON parsing failed", e);
             throw new CustomException(ErrorCode.JSON_PARSING_FAILED);
         }
     }
@@ -326,4 +298,3 @@ public class AnalysisService {
         return new SaveFileResult(savedFilePath, absoluteFilePath);
     }
 }
-

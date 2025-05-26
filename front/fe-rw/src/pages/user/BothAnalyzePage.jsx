@@ -417,14 +417,12 @@ const BothAnalyzePage = () => {
 
     setLoading(true);
 
-    try {
-      // 얼룩 분석
-      const stainFormData = new FormData();
-      stainFormData.append("file", stainFile);
 
-      // 라벨 분석
-      const labelFormData = new FormData();
-      labelFormData.append("file", labelFile);
+    try {
+      // 하나의 FormData에 두 파일 모두 추가
+      const formData = new FormData();
+      formData.append("stainFile", stainFile);
+      formData.append("labelFile", labelFile);
 
       const token = localStorage.getItem("accessToken");
       const headers = {
@@ -432,16 +430,14 @@ const BothAnalyzePage = () => {
         Authorization: token ? `Bearer ${token}` : "",
       };
 
-      const [stainResponse, labelResponse] = await Promise.all([
-        axios.post(ANALYSIS_API.STAIN, stainFormData, { headers }),
-        axios.post(ANALYSIS_API.LABEL, labelFormData, { headers }),
-      ]);
+      // 단일 API 호출 (ANALYSIS_API.STAIN_LABEL)
+      const response = await axios.post(ANALYSIS_API.STAIN_LABEL, formData, { headers });
 
-      if (stainResponse.data.success && labelResponse.data.success) {
-        const stainResult = stainResponse.data.data;
-        const labelResult = labelResponse.data.data;
+      if (response.data.success) {
+        const result = response.data.data;
 
         // 얼룩 결과 처리
+        const stainResult = result.stainAnalysis;
         const uniqueStainTypes = [
           ...new Set(stainResult.detected_stain.top3.map((s) => s.class)),
         ];
@@ -458,6 +454,7 @@ const BothAnalyzePage = () => {
         });
 
         // 라벨 결과 처리
+        const labelResult = result.labelAnalysis;
         const detectedLabels = labelResult.detected_labels || [];
         const labelExplanation = labelResult.label_explanation || [];
 
@@ -482,11 +479,8 @@ const BothAnalyzePage = () => {
           },
         });
       } else {
-        const stainError =
-          stainResponse.data.error?.message || "얼룩 분석에 실패했습니다.";
-        const labelError =
-          labelResponse.data.error?.message || "라벨 분석에 실패했습니다.";
-        alert(`분석 실패:\n${stainError}\n${labelError}`);
+        const errorMessage = response.data.error?.message || "분석에 실패했습니다.";
+        alert(`분석 실패: ${errorMessage}`);
 
         setStainFile(null);
         setStainImage(null);
