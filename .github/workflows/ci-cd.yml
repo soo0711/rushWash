@@ -38,6 +38,12 @@ jobs:
 #        env:
 #          CI: false
 
+      - name: Grant permission to Gradle
+        run: chmod +x back/rushWash/gradlew
+        working-directory: .
+        env:
+          CI: false
+
       - name: application.yml 파일 설정
         run: |
           mkdir -p back/rushWash/src/main/resources
@@ -55,8 +61,8 @@ jobs:
       #      - name: 기존 ai 폴더 삭제
       #        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "rm -rf /home/t25119/v109.src/ai"
 
-#      - name: 배포 back 디렉토리 만들기
-#        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "mkdir -p /home/t25119/v109.src/back"
+      - name: 배포 back 디렉토리 만들기
+        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "mkdir -p /home/t25119/v109.src/back"
 
       - name: jar 학과 서버로 복사
         run: scp -o StrictHostKeyChecking=no -P 22 back/rushWash/build/libs/rushWash-0.0.1-SNAPSHOT.jar t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/back
