@@ -185,6 +185,20 @@ const HistoryDetailPage = () => {
           {/* 분석 결과 */}
           <div className="mb-6">
           <h3 className="text-lg font-medium mb-2">분석 결과</h3>
+          {/* AI 추천 종합 세탁 가이드 (guide category) */}
+          {detail.washingList.some((item) => item.stainCategory === "guide") && (
+            <div className="mt-6 p-4 bg-green-50 rounded-lg">
+              <p className="text-sm text-green-600 mb-2 font-medium">
+                🤖 AI 추천 종합 세탁 가이드
+              </p>
+              <p className="text-gray-700 text-sm whitespace-pre-line">
+                {
+                  detail.washingList.find((item) => item.stainCategory === "guide")
+                    ?.analysis
+                }
+              </p>
+            </div>
+          )}
           {detail.washingList.map((item, index) => (
             <div key={item.id} className="mb-4 p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-500 mb-1">
