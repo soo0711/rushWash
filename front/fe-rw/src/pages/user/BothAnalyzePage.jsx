@@ -455,7 +455,7 @@ const BothAnalyzePage = () => {
               washing_instruction: result.washing_instruction,
               detected_labels: detectedLabels,
               label_explanation: labelExplanation,
-              methods: methods,
+              methods,
               output_image_paths: result.output_image_paths,
               llm_generated_guide: result.llm_generated_guide,
             },

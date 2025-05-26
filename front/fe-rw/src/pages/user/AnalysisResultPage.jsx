@@ -449,25 +449,8 @@ const AnalysisResultPage = () => {
 
             {/* Both 타입인 경우 얼룩과 라벨 결과 모두 표시 */}
             {analysisType === "both" && analysisData && (
-              <>
-                {/* 최고 확률 얼룩 결과 */}
-                {analysisData.top1_stain && (
-                  <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-500 mb-1">
-                      가장 확률이 높은 얼룩
-                    </p>
-                    <div className="flex items-center mb-2">
-                      <p className="text-gray-800 font-semibold">
-                        💧 {analysisData.top1_stain}
-                      </p>
-                    </div>
-                    <p className="text-gray-700 text-sm whitespace-pre-line">
-                      {analysisData.washing_instruction}
-                    </p>
-                  </div>
-                )}
-
-                {/* AI 생성 종합 가이드 */}
+            <>
+              {/* AI 생성 종합 가이드 */}
                 {analysisData.llm_generated_guide && (
                   <div className="mt-4 p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-green-600 mb-2 font-medium">
@@ -478,8 +461,35 @@ const AnalysisResultPage = () => {
                     </p>
                   </div>
                 )}
-              </>
-            )}
+              {/* 최고 확률 얼룩 결과 */}
+              {analysisData.top1_stain && (
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-1">감지된 얼룩</p>
+                  <div className="flex items-center mb-2">
+                    <p className="text-gray-800 font-semibold">
+                      💧 {analysisData.top1_stain}
+                    </p>
+                  </div>
+                  <p className="text-gray-700 text-sm whitespace-pre-line">
+                    {analysisData.washing_instruction}
+                  </p>
+                </div>
+              )}
+
+              {/* 감지된 라벨 결과 */}
+              {analysisData.methods && analysisData.methods.length > 0 && (
+                <>
+                  <div className="mb-4 mt-6">
+                    <h4 className="text-md font-semibold mb-2 text-gray-800">
+                      감지된 세탁 심볼
+                    </h4>
+                    {renderLabelResultSection("감지된 세탁 기호", analysisData.methods)}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
 
             {/* 결과가 없는 경우 */}
             {analysisType === "stain" &&
