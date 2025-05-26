@@ -17,16 +17,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: fronted 디렉토리 안 파일 지우기
-        run: |
-          rm -rf back/rushWash/src/main/frontend/* \
-                 back/rushWash/src/main/frontend/.[!.]* \
-                 back/rushWash/src/main/frontend/..?* || true
+#      - name: fronted 디렉토리 안 파일 지우기
+#        run: |
+#          rm -rf back/rushWash/src/main/frontend/* \
+#                 back/rushWash/src/main/frontend/.[!.]* \
+#                 back/rushWash/src/main/frontend/..?* || true
+#
+#      - name: frontend 로 front 파일 복사
+#        run: |
+#          mkdir -p back/rushWash/src/main/frontend
+#          cp -r front/fe-rw/* back/rushWash/src/main/frontend/
 
-      - name: frontend 로 front 파일 복사
+      - name: frontend 로 front 파일 복사 (변경된 파일만)
         run: |
-          mkdir -p back/rushWash/src/main/frontend
-          cp -r front/fe-rw/* back/rushWash/src/main/frontend/
+          rsync -a --delete front/fe-rw/ back/rushWash/src/main/frontend/
 
       - name: Grant permission to Gradle
         run: chmod +x back/rushWash/gradlew
