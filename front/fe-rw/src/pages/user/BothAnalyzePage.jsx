@@ -513,6 +513,18 @@ const BothAnalyzePage = () => {
     };
   }, []);
 
+  // 이미지 미리보기 URL 정리 - 추가된 부분!
+  useEffect(() => {
+    return () => {
+      if (stainImage && stainImage.startsWith("blob:")) {
+        URL.revokeObjectURL(stainImage);
+      }
+      if (labelImage && labelImage.startsWith("blob:")) {
+        URL.revokeObjectURL(labelImage);
+      }
+    };
+  }, [stainImage, labelImage]);
+
   return (
     <div className="flex flex-col min-h-screen w-full bg-gray-50 sandol-font">
       <Header />
