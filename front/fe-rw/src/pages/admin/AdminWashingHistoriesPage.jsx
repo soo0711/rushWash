@@ -222,6 +222,22 @@ const AdminWashingHistoriesPage = () => {
     setSortConfig({ key, direction });
   };
 
+  // 정렬 함수 추가
+  const reorderResults = (results) => {
+    const stainPriority = [
+      "blood", "coffee", "ink", "oil", "kimchi",
+      "lipstick", "mustard", "earth", "wine"
+    ];
+
+    return [
+      ...results.filter((r) => r.category === "guide"),
+      ...results.filter((r) => stainPriority.includes(r.category)),
+      ...results.filter(
+        (r) => r.category !== "guide" && !stainPriority.includes(r.category)
+      ),
+    ];
+  };
+
   // 정렬 방향 아이콘 표시
   const getSortIcon = (name) => {
     if (sortConfig.key !== name) return null;
@@ -248,6 +264,8 @@ const AdminWashingHistoriesPage = () => {
 
   // 상세 모달 열기
   const openDetailModal = (history) => {
+    const reordered = reorderResults(history.results);
+    setCurrentHistory({ ...history, results: reordered })
     setCurrentHistory(history);
     setIsDetailModalOpen(true);
   };
