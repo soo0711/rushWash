@@ -76,6 +76,11 @@ jobs:
             if [ -f /home/t25119/v109.src/app.pid ]; then
               kill \$(cat /home/t25119/v109.src/app.pid) || true
             fi
+          
+            # 🔹 test.py 실행 (서버 실행 전에)
+            cd /home/t25119/v109.src/ai && python3 test.py
+          
+            # 🔹 백엔드 실행
             nohup java -jar /home/t25119/v109.src/back/rushWash-0.0.1-SNAPSHOT.jar > /home/t25119/v109.src/app.log 2>&1 &
             echo \$! > /home/t25119/v109.src/app.pid
           "
