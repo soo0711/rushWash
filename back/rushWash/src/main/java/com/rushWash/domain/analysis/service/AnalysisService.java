@@ -192,6 +192,8 @@ public class AnalysisService {
             WashingHistory washingHistory = washingService.addWashingHistoryByStainAndLabelImage(userId, AnalysisType.LABEL_AND_STAIN,
                     savedFilePathStain, savedFilePathLabel);
 
+            washingService.addWashingResult(washingHistory, response.top1Stain(), response.washingInstruction());
+
             List<String> detectedLabels = response.detectedLabels();
             List<String> labelExplanation = response.labelExplanation();
 
