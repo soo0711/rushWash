@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -39,6 +40,7 @@ public class AnalysisService {
     private String pythonScriptPath;
 
 
+    @Transactional
     public AnalysisOnlyStainResponse getStainAnalysis(int userId, MultipartFile file){
 
         // 1. 파일 저장
@@ -97,6 +99,7 @@ public class AnalysisService {
         }
     }
 
+    @Transactional
     public AnalysisOnlyLabelResponse getLabelAnalysis(int userId, MultipartFile file){
         // 1. 파일 저장
         SaveFileResult result = saveFileAndGetPaths(userId, file);
@@ -145,6 +148,7 @@ public class AnalysisService {
         }
     }
 
+    @Transactional
     public AnalysisStainAndLabelResponse getStainAndLabelAnalysis(int userId, MultipartFile stainFile, MultipartFile labelFile){
         // 1. 파일 저장
         SaveFileResult resultListStain = saveFileAndGetPaths(userId, stainFile);
