@@ -14,7 +14,6 @@ STAIN_MODEL_PATH = os.path.join(BASE_DIR, "stain", "stain_cls.pt")
 LABEL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
 STAIN_GUIDE_PATH = os.path.join(BASE_DIR, "stain", "stain_washing_guidelines.json")
 LABEL_GUIDE_PATH = os.path.join(BASE_DIR, "symbol", "label_symbol_guide.json")
-
 OUT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "images"))
 # ───── 클래스 및 설정 ─────
 STAIN_CLASSES = [
@@ -104,7 +103,7 @@ def predict_stain(image_path):
         f.write(f"{classes[i]} {xc:.6f} {yc:.6f} {bw:.6f} {bh:.6f}\n")
 
     cv2.imwrite(image_out, img)
-    return top3, os.path.relpath(image_out, os.path.dirname(BASE_DIR)).replace("\\", "/")
+    return top3, os.path.relpath(image_out, os.path.dirname(OUT_DIR)).replace("\\", "/")
 
 
 # ───── symbol 예측 ─────
@@ -154,7 +153,9 @@ def predict_label(image_path):
 
     cv2.imwrite(image_out, img)
     label_names = list(set(label_model.names[cls] for cls in classes))
-    return label_names, os.path.relpath(image_out, os.path.dirname(BASE_DIR)).replace("\\", "/")
+    return label_names, os.path.relpath(image_out, os.path.dirname(OUT_DIR)).replace(
+        "\\", "/"
+    )
 
 
 # ───── 실행 진입점 ─────
