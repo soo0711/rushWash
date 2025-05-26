@@ -93,6 +93,18 @@ public class WashingService {
         return washingHistory;
     }
 
+    public WashingHistory addWashingHistoryByStainAndLabelImage(int userId, AnalysisType analysisType, String stainImageUrl, String labelImageUrl){
+        WashingHistory washingHistory = washingHistoryRepository.save(
+                WashingHistory.builder()
+                        .userId(userId)
+                        .analysisType(analysisType)
+                        .stainImageUrl(stainImageUrl)
+                        .labelImageUrl(labelImageUrl)
+                        .build()
+        );
+        return washingHistory;
+    }
+
     public void addWashingResult(WashingHistory washingHistory, String stainCategory, String analysis){
         WashingResult washingResult = washingResultRepository.save(
                 WashingResult.builder()

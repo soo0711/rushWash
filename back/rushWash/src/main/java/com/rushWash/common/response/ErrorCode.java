@@ -25,6 +25,8 @@ public enum ErrorCode {
     STAIN_IMAGE_REUPLOAD(400, HttpStatus.BAD_REQUEST, "얼룩이 명확하게 보이도록 다시 촬영해 주세요."),
     LABEL_IMAGE_REUPLOAD(400, HttpStatus.BAD_REQUEST, "라벨이 명확하게 보이도록 다시 촬영해 주세요."),
 
+    STAIN_LABEL_IMAGE_REUPLOAD(400, HttpStatus.BAD_REQUEST, "얼룩과 라벨이 명확하게 보이도록 다시 촬영해 주세요."),
+
     // 파일
     INVALID_FILE_NAME(400, HttpStatus.BAD_REQUEST, "유효하지 않은 파일 이름입니다."),
 

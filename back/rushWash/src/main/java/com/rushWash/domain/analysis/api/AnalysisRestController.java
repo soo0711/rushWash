@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/analysis")
@@ -53,14 +55,15 @@ public class AnalysisRestController {
     @PostMapping("/stain-label")
     public ApiResponse<String> getStainAndLabelAnalysis(
             @RequestHeader(name = "Authorization", required = false) String authHeader,
-            @RequestPart("file") MultipartFile file){
+            @RequestPart("stainFile") MultipartFile stainFile,
+            @RequestPart("labelFile") MultipartFile labelFile){
 
         if (authHeader == null || authHeader.isEmpty()){
             throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
         int userId = tokenService.extractUserIdFromHeader(authHeader);
-        analysisService.getStainAndLabelAnalysis(userId, file);
+        analysisService.getStainAndLabelAnalysis(userId, stainFile, labelFile);
 
         return ApiResponse.ok("임시 데이터 응답");
     }
