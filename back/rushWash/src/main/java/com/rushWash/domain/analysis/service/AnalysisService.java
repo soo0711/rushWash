@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class AnalysisService {
 
@@ -162,7 +161,7 @@ public class AnalysisService {
 
 
         // 2. 파이썬 불러오기
-        String pythonOutput = executePythonScript("stain_and_label", absoluteImagePathStain, absoluteImagePathLabel);
+        String pythonOutput = executePythonScriptByStainLabel("stain_and_label", absoluteImagePathStain, absoluteImagePathLabel);
 
         // 3. JSON 값 응답
         try {
@@ -171,12 +170,12 @@ public class AnalysisService {
                 throw new CustomException(ErrorCode.PYTHON_SCRIPT_OUTPUT_INVALID);
             }
             String jsonOutput = pythonOutput.substring(jsonStart);
-            log.info("Extracted JSON string:\n{}", jsonOutput);  // JSON 문자열 로그
+            System.out.println("Extracted JSON string:\n" + jsonOutput);  // JSON 문자열 출력
 
             AnalysisStainAndLabelResponse response = objectMapper.readValue(jsonOutput, AnalysisStainAndLabelResponse.class);
 
-            log.info("Parsed detectedLabels: {}", response.detectedLabels());
-            log.info("Parsed labelExplanation: {}", response.labelExplanation());
+            System.out.println("Parsed detectedLabels: " + response.detectedLabels());
+            System.out.println("Parsed labelExplanation: " + response.labelExplanation());
 
             if (response.top1Stain() == null || response.top1Stain().isBlank()) {
                 throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
@@ -255,7 +254,7 @@ public class AnalysisService {
         }
     }
 
-    private String executePythonScript(String analysisType, String stainImagePath, String labelImagePath) {
+    private String executePythonScriptByStainLabel(String analysisType, String stainImagePath, String labelImagePath) {
         try {
             // 명령어 구성
             ProcessBuilder processBuilder = new ProcessBuilder(
