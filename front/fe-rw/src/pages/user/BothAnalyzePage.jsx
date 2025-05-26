@@ -447,7 +447,7 @@ const BothAnalyzePage = () => {
         }));
 
         // 결과 페이지로 직접 데이터 전달 (API 호출 없이)
-        navigate("/analyze/result", {
+        navigate("/analyze/result/both", {
           state: {
             analysisType: "both",
             analysisData: {
