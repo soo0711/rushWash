@@ -5,6 +5,7 @@ import com.rushWash.common.response.CustomException;
 import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.analysis.api.dto.response.AnalysisOnlyLabelResponse;
 import com.rushWash.domain.analysis.api.dto.response.AnalysisOnlyStainResponse;
+import com.rushWash.domain.analysis.api.dto.response.AnalysisStainAndLabelResponse;
 import com.rushWash.domain.analysis.service.AnalysisService;
 import com.rushWash.domain.users.service.TokenService;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class AnalysisRestController {
     }
 
     @PostMapping("/stain-label")
-    public ApiResponse<String> getStainAndLabelAnalysis(
+    public ApiResponse<AnalysisStainAndLabelResponse> getStainAndLabelAnalysis(
             @RequestHeader(name = "Authorization", required = false) String authHeader,
             @RequestPart("stainFile") MultipartFile stainFile,
             @RequestPart("labelFile") MultipartFile labelFile){
@@ -63,9 +64,9 @@ public class AnalysisRestController {
         }
 
         int userId = tokenService.extractUserIdFromHeader(authHeader);
-        analysisService.getStainAndLabelAnalysis(userId, stainFile, labelFile);
+        AnalysisStainAndLabelResponse response = analysisService.getStainAndLabelAnalysis(userId, stainFile, labelFile);
 
-        return ApiResponse.ok("임시 데이터 응답");
+        return ApiResponse.ok(response);
     }
 
 }
