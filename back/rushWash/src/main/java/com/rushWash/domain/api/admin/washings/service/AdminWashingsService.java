@@ -1,5 +1,6 @@
 package com.rushWash.domain.api.admin.washings.service;
 
+import com.rushWash.common.file.FileManagerService;
 import com.rushWash.common.response.CustomException;
 import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.api.admin.washings.api.dto.response.WashingListResponse;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminWashingsService {
     private final WashingService washingService;
+    private final FileManagerService fileManagerService;
 
     private final WashingHistoryRepository washingHistoryRepository;
 
@@ -28,7 +30,13 @@ public class AdminWashingsService {
     public void deleteWashing(int washingHistoryId) {
         WashingHistory washingHistory = washingHistoryRepository.findById(washingHistoryId)
                 .orElseThrow(() -> new CustomException(ErrorCode.WASHING_HISTORY_NOT_FOUNT));
+        if(washingHistory.getLabelImageUrl() != null) {
+            fileManagerService.deleteFabricSoftenerFile(washingHistory.getLabelImageUrl());
+        }
 
+        if(washingHistory.getStainImageUrl() != null) {
+            fileManagerService.deleteFabricSoftenerFile(washingHistory.getStainImageUrl());
+        }
         washingHistoryRepository.deleteById(washingHistoryId);
     }
 }
