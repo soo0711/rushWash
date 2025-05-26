@@ -60,7 +60,6 @@ const AdminWashingHistoriesPage = () => {
           });
 
           setWashingHistories(Object.values(grouped));
-
         } else {
           console.error(response.data.error?.message || "불러오기 실패");
           setError(
@@ -225,8 +224,15 @@ const AdminWashingHistoriesPage = () => {
   // 정렬 함수 추가
   const reorderResults = (results) => {
     const stainPriority = [
-      "blood", "coffee", "ink", "oil", "kimchi",
-      "lipstick", "mustard", "earth", "wine"
+      "blood",
+      "coffee",
+      "ink",
+      "oil",
+      "kimchi",
+      "lipstick",
+      "mustard",
+      "earth",
+      "wine",
     ];
 
     return [
@@ -265,7 +271,7 @@ const AdminWashingHistoriesPage = () => {
   // 상세 모달 열기
   const openDetailModal = (history) => {
     const reordered = reorderResults(history.results);
-    setCurrentHistory({ ...history, results: reordered })
+    setCurrentHistory({ ...history, results: reordered });
     setCurrentHistory(history);
     setIsDetailModalOpen(true);
   };
@@ -587,8 +593,11 @@ const AdminWashingHistoriesPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                    {currentHistories.map((history, index) => (
-                      <tr key={`${history.id}-${index}`} className="hover:bg-gray-50">
+                  {currentHistories.map((history, index) => (
+                    <tr
+                      key={`${history.id}-${index}`}
+                      className="hover:bg-gray-50"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
@@ -704,124 +713,136 @@ const AdminWashingHistoriesPage = () => {
       </div>
 
       {/* 상세 정보 모달 */}
-      {isDetailModalOpen && currentHistory && (() => {
-      const groupedResults = currentHistory.results.reduce((acc, cur) => {
-        if (!acc[cur.category]) acc[cur.category] = [];
-        acc[cur.category].push(cur.analysis);
-        return acc;
-      }, {});
+      {isDetailModalOpen &&
+        currentHistory &&
+        (() => {
+          const groupedResults = currentHistory.results.reduce((acc, cur) => {
+            if (!acc[cur.category]) acc[cur.category] = [];
+            acc[cur.category].push(cur.analysis);
+            return acc;
+          }, {});
 
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  분석 내역 상세 정보
-                </h3>
-                <button
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
+          return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      분석 내역 상세 정보
+                    </h3>
+                    <button
+                      onClick={closeModal}
+                      className="text-gray-400 hover:text-gray-500"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-md font-medium text-gray-700 mb-2">
-                    기본 정보
-                  </h4>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-500">ID</div>
-                        <div>{currentHistory.id}</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-md font-medium text-gray-700 mb-2">
+                        기본 정보
+                      </h4>
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-500">ID</div>
+                            <div>{currentHistory.id}</div>
+                          </div>
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-500">
+                              분석 유형
+                            </div>
+                            <div>{currentHistory.analysisType}</div>
+                          </div>
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-500">
+                              사용자 이메일
+                            </div>
+                            <div>{currentHistory.userEmail}</div>
+                          </div>
+                          <div className="text-sm">
+                            <div className="font-medium text-gray-500">
+                              등록일
+                            </div>
+                            <div>{formatDate(currentHistory.createdAt)}</div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-500">분석 유형</div>
-                        <div>{currentHistory.analysisType}</div>
+
+                      <h4 className="text-md font-medium text-gray-700 mt-4 mb-2">
+                        분석 결과
+                      </h4>
+                      <div className="bg-gray-50 p-4 rounded-md space-y-3">
+                        {Object.entries(groupedResults).map(
+                          ([category, analyses], idx) => (
+                            <div key={idx}>
+                              <p className="font-semibold text-blue-700">
+                                {category}
+                              </p>
+                              <ul className="list-disc list-inside text-gray-800 text-sm space-y-1 ml-2">
+                                {analyses.map((text, i) => (
+                                  <li key={i}>{text}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )
+                        )}
                       </div>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-500">사용자 이메일</div>
-                        <div>{currentHistory.userEmail}</div>
-                      </div>
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-500">등록일</div>
-                        <div>{formatDate(currentHistory.createdAt)}</div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-md font-medium text-gray-700 mb-2">
+                        이미지
+                      </h4>
+                      <div className="space-y-4">
+                        {currentHistory.stainImageUrl && (
+                          <div>
+                            <div className="text-sm font-medium text-gray-500 mb-1">
+                              얼룩 이미지
+                            </div>
+                            <div className="border rounded-md overflow-hidden">
+                              <img
+                                src={currentHistory.stainImageUrl}
+                                alt="얼룩 이미지"
+                                className="w-full object-contain"
+                                style={{ maxHeight: "300px" }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {currentHistory.labelImageUrl && (
+                          <div>
+                            <div className="text-sm font-medium text-gray-500 mb-1">
+                              라벨 이미지
+                            </div>
+                            <div className="border rounded-md overflow-hidden">
+                              <img
+                                src={currentHistory.labelImageUrl}
+                                alt="라벨 이미지"
+                                className="w-full object-contain"
+                                style={{ maxHeight: "300px" }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <h4 className="text-md font-medium text-gray-700 mt-4 mb-2">
-                    분석 결과
-                  </h4>
-                  <div className="bg-gray-50 p-4 rounded-md space-y-3">
-                    {Object.entries(groupedResults).map(([category, analyses], idx) => (
-                      <div key={idx}>
-                        <p className="font-semibold text-blue-700">{category}</p>
-                        <ul className="list-disc list-inside text-gray-800 text-sm space-y-1 ml-2">
-                          {analyses.map((text, i) => (
-                            <li key={i}>{text}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={closeModal}
+                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+                    >
+                      닫기
+                    </button>
                   </div>
                 </div>
-
-                <div>
-                  <h4 className="text-md font-medium text-gray-700 mb-2">
-                    이미지
-                  </h4>
-                  <div className="space-y-4">
-                    {currentHistory.stainImageUrl && (
-                      <div>
-                        <div className="text-sm font-medium text-gray-500 mb-1">
-                          얼룩 이미지
-                        </div>
-                        <div className="border rounded-md overflow-hidden">
-                          <img
-                            src={currentHistory.stainImageUrl}
-                            alt="얼룩 이미지"
-                            className="w-full object-contain"
-                            style={{ maxHeight: "300px" }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {currentHistory.labelImageUrl && (
-                      <div>
-                        <div className="text-sm font-medium text-gray-500 mb-1">
-                          라벨 이미지
-                        </div>
-                        <div className="border rounded-md overflow-hidden">
-                          <img
-                            src={currentHistory.labelImageUrl}
-                            alt="라벨 이미지"
-                            className="w-full object-contain"
-                            style={{ maxHeight: "300px" }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={closeModal}
-                  className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
-                >
-                  닫기
-                </button>
               </div>
             </div>
-          </div>
-        </div>
-      );
-    })()}
+          );
+        })()}
 
       {/* 이미지 모달 */}
       {isImageModalOpen && (
