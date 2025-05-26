@@ -417,7 +417,6 @@ const BothAnalyzePage = () => {
 
     setLoading(true);
 
-
     try {
       // 하나의 FormData에 두 파일 모두 추가
       const formData = new FormData();
@@ -431,63 +430,44 @@ const BothAnalyzePage = () => {
       };
 
       // 단일 API 호출 (ANALYSIS_API.STAIN_LABEL)
-      const response = await axios.post(ANALYSIS_API.STAIN_LABEL, formData, { headers });
+      const response = await axios.post(ANALYSIS_API.STAIN_LABEL, formData, {
+        headers,
+      });
 
       if (response.data.success) {
         const result = response.data.data;
 
-        // 얼룩 결과 처리
-        const stainResult = result.stainAnalysis;
-        const uniqueStainTypes = [
-          ...new Set(stainResult.detected_stain.top3.map((s) => s.class)),
-        ];
+        // 새로운 API 응답 구조에 맞게 데이터 처리
+        const detectedLabels = result.detected_labels || [];
+        const labelExplanation = result.label_explanation || [];
 
-        const stainInstructionsMap = {};
-        uniqueStainTypes.forEach((stain) => {
-          const matchingInstructions = stainResult.washing_instructions
-            .filter((w) => w.class === stain)
-            .map((w) => ({
-              title: stain,
-              description: w.instruction,
-            }));
-          stainInstructionsMap[stain] = matchingInstructions;
-        });
-
-        // 라벨 결과 처리
-        const labelResult = result.labelAnalysis;
-        const detectedLabels = labelResult.detected_labels || [];
-        const labelExplanation = labelResult.label_explanation || [];
-
-        const labelMethods = detectedLabels.map((label, index) => ({
+        const methods = detectedLabels.map((label, index) => ({
           title: label,
           description: labelExplanation[index] || "",
         }));
 
-        navigate(`/analyze/result/both`, {
+        // 결과 페이지로 직접 데이터 전달 (API 호출 없이)
+        navigate("/analyze/result", {
           state: {
             analysisType: "both",
             analysisData: {
-              stain: {
-                types: uniqueStainTypes,
-                instructionsMap: stainInstructionsMap,
-              },
-              label: {
-                type: "라벨 분석 결과",
-                methods: labelMethods,
-              },
+              top1_stain: result.top1_stain,
+              washing_instruction: result.washing_instruction,
+              detected_labels: detectedLabels,
+              label_explanation: labelExplanation,
+              methods: methods,
+              output_image_paths: result.output_image_paths,
+              llm_generated_guide: result.llm_generated_guide,
             },
           },
         });
       } else {
-        const errorMessage = response.data.error?.message || "분석에 실패했습니다.";
+        const errorMessage =
+          response.data.error?.message || "분석에 실패했습니다.";
         alert(`분석 실패: ${errorMessage}`);
 
-        setStainFile(null);
-        setStainImage(null);
-        setStainSelectedOption("이미지 업로드 형식 선택");
-        setLabelFile(null);
-        setLabelImage(null);
-        setLabelSelectedOption("이미지 업로드 형식 선택");
+        // 실패 시 상태 초기화
+        resetAnalysisState();
       }
     } catch (err) {
       console.error("분석 요청 실패:", err);
@@ -496,18 +476,35 @@ const BothAnalyzePage = () => {
         "서버 오류로 분석에 실패했습니다.";
       alert(errorMessage);
 
-      setStainFile(null);
-      setStainImage(null);
-      setStainSelectedOption("이미지 업로드 형식 선택");
-      setLabelFile(null);
-      setLabelImage(null);
-      setLabelSelectedOption("이미지 업로드 형식 선택");
-      window.location.reload();
+      // 에러 시 상태 초기화
+      resetAnalysisState();
     } finally {
       setLoading(false);
     }
   };
+  // 분석 상태 초기화 함수 추가
+  const resetAnalysisState = () => {
+    setStainFile(null);
+    setStainImage(null);
+    setStainSelectedOption("이미지 업로드 형식 선택");
+    setLabelFile(null);
+    setLabelImage(null);
+    setLabelSelectedOption("이미지 업로드 형식 선택");
 
+    // input 초기화
+    if (stainFileInputRef.current) {
+      stainFileInputRef.current.value = "";
+    }
+    if (stainGalleryInputRef.current) {
+      stainGalleryInputRef.current.value = "";
+    }
+    if (labelFileInputRef.current) {
+      labelFileInputRef.current.value = "";
+    }
+    if (labelGalleryInputRef.current) {
+      labelGalleryInputRef.current.value = "";
+    }
+  };
   // 컴포넌트 언마운트 시 웹캠 정리
   useEffect(() => {
     return () => {

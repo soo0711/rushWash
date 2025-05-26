@@ -467,14 +467,6 @@ const AnalysisResultPage = () => {
                   </div>
                 )}
 
-                {/* 라벨 분석 결과 */}
-                {analysisData.methods &&
-                  analysisData.methods.length > 0 &&
-                  renderLabelResultSection(
-                    "감지된 세탁 기호",
-                    analysisData.methods
-                  )}
-
                 {/* AI 생성 종합 가이드 */}
                 {analysisData.llm_generated_guide && (
                   <div className="mt-4 p-4 bg-green-50 rounded-lg">
