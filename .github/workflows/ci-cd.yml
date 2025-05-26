@@ -48,8 +48,8 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-#      - name: 기존 ai 폴더 삭제
-#        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "rm -rf /home/t25119/v109.src/ai"
+      #      - name: 기존 ai 폴더 삭제
+      #        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "rm -rf /home/t25119/v109.src/ai"
 
       - name: 배포 back 디렉토리 만들기
         run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "mkdir -p /home/t25119/v109.src/back"
@@ -63,8 +63,8 @@ jobs:
             -e "ssh -o StrictHostKeyChecking=no -p 22" \
             ai/ t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/ai/
 
-#      - name: ai 폴더 복사
-#        run: scp -o StrictHostKeyChecking=no -r -P 22 ai t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/
+      #      - name: ai 폴더 복사
+      #        run: scp -o StrictHostKeyChecking=no -r -P 22 ai t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/
 
       - name: 서버 실행
         run: |
