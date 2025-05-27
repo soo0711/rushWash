@@ -773,20 +773,80 @@ const AdminWashingHistoriesPage = () => {
                       <h4 className="text-md font-medium text-gray-700 mt-4 mb-2">
                         분석 결과
                       </h4>
-                      <div className="bg-gray-50 p-4 rounded-md space-y-3">
+                      <div className="bg-gray-50 p-4 rounded-md space-y-4">
                         {Object.entries(groupedResults).map(
-                          ([category, analyses], idx) => (
-                            <div key={idx}>
-                              <p className="font-semibold text-blue-700">
-                                {category}
-                              </p>
-                              <ul className="list-disc list-inside text-gray-800 text-sm space-y-1 ml-2">
-                                {analyses.map((text, i) => (
-                                  <li key={i}>{text}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )
+                          ([category, analyses], idx) => {
+                            // 카테고리별 스타일 정의
+                            const getCategoryStyle = (cat) => {
+                              if (cat === "guide") {
+                                return {
+                                  bgColor: "bg-green-50",
+                                  borderColor: "border-green-200",
+                                  titleColor: "text-green-700",
+                                  icon: "🤖",
+                                  label: "AI 종합 가이드",
+                                };
+                              } else if (
+                                [
+                                  "blood",
+                                  "coffee",
+                                  "ink",
+                                  "oil",
+                                  "kimchi",
+                                  "lipstick",
+                                  "mustard",
+                                  "earth",
+                                  "wine",
+                                ].includes(cat)
+                              ) {
+                                return {
+                                  bgColor: "bg-red-50",
+                                  borderColor: "border-red-200",
+                                  titleColor: "text-red-700",
+                                  icon: "💧",
+                                  label: `${cat} 얼룩`,
+                                };
+                              } else {
+                                return {
+                                  bgColor: "bg-blue-50",
+                                  borderColor: "border-blue-200",
+                                  titleColor: "text-blue-700",
+                                  icon: "🏷️",
+                                  label: `${cat} 라벨`,
+                                };
+                              }
+                            };
+
+                            const style = getCategoryStyle(category);
+
+                            return (
+                              <div
+                                key={idx}
+                                className={`${style.bgColor} ${style.borderColor} border-l-4 p-4 rounded-r-md`}
+                              >
+                                <div className="flex items-center mb-2">
+                                  <span className="text-lg mr-2">
+                                    {style.icon}
+                                  </span>
+                                  <p
+                                    className={`font-semibold ${style.titleColor} text-base`}
+                                  >
+                                    {style.label}
+                                  </p>
+                                </div>
+                                <div className="ml-6">
+                                  {analyses.map((text, i) => (
+                                    <div
+                                      key={i}
+                                      className="text-gray-800 text-sm mb-2 p-2 bg-white rounded-md shadow-sm"
+                                    >
+                                      {text}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
                         )}
                       </div>
                     </div>
