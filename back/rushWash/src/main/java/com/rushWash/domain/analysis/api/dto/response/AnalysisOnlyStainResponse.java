@@ -18,7 +18,7 @@ public record AnalysisOnlyStainResponse(
     ) {
         public record Top3(
                 @JsonProperty("class") String clazz,
-                double confidence
+                Double confidence
         ) {}
     }
 

@@ -63,12 +63,19 @@ public class AnalysisService {
 
             AnalysisOnlyStainResponse response = objectMapper.readValue(jsonOutput, AnalysisOnlyStainResponse.class);
 
+            List<AnalysisOnlyStainResponse.DetectedStain.Top3> top3List = response.detectedStain() != null
+                    ? response.detectedStain().top3()
+                    : null;
+
+            // top3 모든 요소가 비어 있는지 검사
+            boolean isAllTop3Empty = top3List != null && top3List.stream()
+                    .allMatch(t -> t.clazz() == null || t.clazz().isBlank());
+
             if (response.detectedStain() == null
-                    || response.detectedStain().top3() == null
-                    || response.detectedStain().top3().isEmpty()){
-                // 파일 지우기
+                    || top3List == null
+                    || top3List.isEmpty()
+                    || isAllTop3Empty) {
                 fileManagerService.deleteFile(savedFilePath);
-                // 에러
                 throw new CustomException(ErrorCode.STAIN_IMAGE_REUPLOAD);
             }
 
@@ -173,13 +180,18 @@ public class AnalysisService {
 
             AnalysisStainAndLabelResponse response = objectMapper.readValue(jsonOutput, AnalysisStainAndLabelResponse.class);
 
-            if (response.detectedLabels() == null || response.detectedLabels().isEmpty()) {
-                fileManagerService.deleteFile(savedFilePathStain);
-                fileManagerService.deleteFile(savedFilePathLabel);
-                throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
-            }
+            // 필드 유효성 검증
+            boolean isInvalid =
+                    response.top1Stain() == null || response.top1Stain().isBlank()
+                            || response.washingInstruction() == null || response.washingInstruction().isBlank()
+                            || response.detectedLabels() == null || response.detectedLabels().isEmpty()
+                            || response.labelExplanation() == null || response.labelExplanation().isEmpty()
+                            || response.outputImagePaths() == null
+                            || response.outputImagePaths().stain() == null || response.outputImagePaths().stain().isBlank()
+                            || response.outputImagePaths().label() == null || response.outputImagePaths().label().isBlank()
+                            || response.llmGeneratedGuide() == null || response.llmGeneratedGuide().isBlank();
 
-            if (response.labelExplanation() == null || response.labelExplanation().isEmpty()) {
+            if (isInvalid) {
                 fileManagerService.deleteFile(savedFilePathStain);
                 fileManagerService.deleteFile(savedFilePathLabel);
                 throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
