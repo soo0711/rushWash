@@ -724,26 +724,30 @@ const AdminWashingHistoriesPage = () => {
 
           return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full">
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+                {/* 모달 헤더 - 고정 */}
+                <div className="p-6 border-b border-gray-200 flex-shrink-0">
+                  <div className="flex justify-between items-center">
                     <h3 className="text-lg font-medium text-gray-900">
                       분석 내역 상세 정보
                     </h3>
                     <button
                       onClick={closeModal}
-                      className="text-gray-400 hover:text-gray-500"
+                      className="text-gray-400 hover:text-gray-500 text-xl"
                     >
-                      <i className="fas fa-times"></i>
+                      ✕
                     </button>
                   </div>
+                </div>
 
+                {/* 모달 본문 - 스크롤 가능 */}
+                <div className="flex-1 overflow-y-auto p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h4 className="text-md font-medium text-gray-700 mb-2">
                         기본 정보
                       </h4>
-                      <div className="bg-gray-50 p-4 rounded-md">
+                      <div className="bg-gray-50 p-4 rounded-md mb-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="text-sm">
                             <div className="font-medium text-gray-500">ID</div>
@@ -770,7 +774,7 @@ const AdminWashingHistoriesPage = () => {
                         </div>
                       </div>
 
-                      <h4 className="text-md font-medium text-gray-700 mt-4 mb-2">
+                      <h4 className="text-md font-medium text-gray-700 mb-2">
                         분석 결과
                       </h4>
                       <div className="bg-gray-50 p-4 rounded-md space-y-4">
@@ -889,11 +893,14 @@ const AdminWashingHistoriesPage = () => {
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="mt-6 flex justify-end">
+                {/* 모달 푸터 - 고정 */}
+                <div className="p-6 border-t border-gray-200 flex-shrink-0">
+                  <div className="flex justify-end">
                     <button
                       onClick={closeModal}
-                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
+                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
                     >
                       닫기
                     </button>
