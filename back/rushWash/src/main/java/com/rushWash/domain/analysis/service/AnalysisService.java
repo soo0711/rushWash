@@ -277,6 +277,13 @@ public class AnalysisService {
             // 프로세스 종료 대기
             int exitCode = process.waitFor();
 
+            String result = output.toString().trim(); // StringBuilder → String 변환
+
+            // 출력이 없으면 사용자 입력 문제로 간주
+            if (result.isEmpty()) {
+                throw new CustomException(ErrorCode.STAIN_IMAGE_REUPLOAD);
+            }
+
             if (exitCode != 0) {
                 throw new CustomException(ErrorCode.PYTHON_SCRIPT_EXECUTION_FAILED);
             }
