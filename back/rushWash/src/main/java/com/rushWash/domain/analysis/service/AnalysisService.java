@@ -240,12 +240,12 @@ public class AnalysisService {
             String result = output.toString().trim(); // StringBuilder → String 변환
 
             // 출력이 없으면 사용자 입력 문제로 간주
-            if (result.isEmpty() && analysisType.equals("stain_only")) {
+            if ((result == null || result.isEmpty()) && analysisType.equals("stain_only")) {
                 throw new CustomException(ErrorCode.STAIN_IMAGE_REUPLOAD);
             }
 
             // 출력이 없으면 사용자 입력 문제로 간주
-            if (result.isEmpty() && analysisType.equals("label_only")) {
+            if ((result == null || result.isEmpty()) && analysisType.equals("label_only")) {
                 throw new CustomException(ErrorCode.LABEL_IMAGE_REUPLOAD);
             }
 
@@ -292,7 +292,7 @@ public class AnalysisService {
             String result = output.toString().trim(); // StringBuilder → String 변환
 
             // 출력이 없으면 사용자 입력 문제로 간주
-            if (result.isEmpty()) {
+            if (result == null || result.isEmpty()) {
                 throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
             }
 
