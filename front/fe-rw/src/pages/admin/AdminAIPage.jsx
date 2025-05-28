@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import {ADMIN_AI_API} from "../../constants/api";
+import axios from "axios";
+
 const AdminAIPage = () => {
   // 상태 관리
   const [loading, setLoading] = useState(true);
@@ -10,21 +12,24 @@ const AdminAIPage = () => {
   const [retraining, setRetraining] = useState(false);
 
   // 재학습 함수
-  const handleRetrain = async () => {
+const handleRetrain = async () => {
   setRetraining(true);
   try {
     console.log("재학습 요청 시작...");
-    
-    const response = await post(ADMIN_AI_API.RETRAINING, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
 
-    const result = await response.json();
+    const response = await axios.post(
+      ADMIN_AI_API.RETRAINING,
+      {}, // POST body 비어 있으면 빈 객체
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    if (response.ok && result.success) {
+    const result = response.data;
+
+    if (result.success) {
       alert(result.data || "재학습이 완료되었습니다!");
       window.location.reload();
     } else {
@@ -32,11 +37,14 @@ const AdminAIPage = () => {
     }
   } catch (error) {
     console.error("재학습 중 오류 발생:", error);
-    alert("재학습 중 오류가 발생했습니다: " + error.message);
+    const message =
+      error.response?.data?.error?.message || error.message || "알 수 없는 오류";
+    alert("재학습 중 오류가 발생했습니다: " + message);
   } finally {
     setRetraining(false);
   }
 };
+
   // 영어 카테고리명을 한국어로 변환 (얼룩 모델용)
   const getCategoryKoreanName = (englishName) => {
     const nameMap = {
