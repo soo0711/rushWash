@@ -187,18 +187,26 @@ const HistoryDetailPage = () => {
           <h3 className="text-lg font-medium mb-2">분석 결과</h3>
           {/* AI 추천 종합 세탁 가이드 (guide category) */}
           {detail.analysisType === "STAIN" && (
-  <div className="mb-6">
-    {detail.washingList.map((item, index) => (
-      <div key={item.id} className="mb-4 p-4 bg-gray-50 rounded-lg">
-        <p className="text-sm text-gray-500 mb-1">
-          {`${index + 1}번째로 확인된 얼룩`}
-        </p>
-        <p className="text-gray-800 font-semibold mb-2">💧 {item.stainCategory}</p>
-        <p className="text-gray-700 whitespace-pre-line">{item.analysis}</p>
-      </div>
-    ))}
-  </div>
-)}
+          <div className="mb-6">
+            {Object.entries(
+              detail.washingList.reduce((acc, item) => {
+                if (!acc[item.stainCategory]) acc[item.stainCategory] = [];
+                acc[item.stainCategory].push(item.analysis);
+                return acc;
+              }, {})
+            ).map(([category, analyses]) => (
+              <div key={category} className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-800 font-semibold mb-2">💧 {category}</p>
+                <ul className="list-disc list-inside text-gray-700">
+                  {analyses.map((text, idx) => (
+                    <li key={idx} className="whitespace-pre-line">{text}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+
 
 {detail.analysisType === "LABEL" && (
   <div className="mb-6">
