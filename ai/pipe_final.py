@@ -57,7 +57,7 @@ SYMBOL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
 
 # MariaDB 설정
 DB_HOST, DB_PORT = "localhost", 3306
-DB_USER, DB_PASSWORD, DB_NAME = "dbid251", "dbpass251", "db25119"
+DB_USER, DB_PASSWORD, DB_NAME = "", "", ""
 SQL_QUERY = (
     "SELECT stain_image_url, label_image_url "
     "FROM washing_history "
