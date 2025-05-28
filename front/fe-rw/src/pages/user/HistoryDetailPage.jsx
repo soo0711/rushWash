@@ -248,7 +248,7 @@ const HistoryDetailPage = () => {
         <div key={stain.id} className="mt-4 mb-4 p-4 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-500 mb-1">감지된 얼룩</p>
           <p className="text-gray-800 font-semibold mb-2">💧 {stain.stainCategory}</p>
-          <p className="text-gray-700 whitespace-pre-line">{stain.analysis}</p>
+          {/* <p className="text-gray-700 whitespace-pre-line">{stain.analysis}</p> */}
         </div>
       ) : null;
     })()}
