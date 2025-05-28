@@ -194,8 +194,11 @@ const HistoryDetailPage = () => {
                 acc[item.stainCategory].push(item.analysis);
                 return acc;
               }, {})
-            ).map(([category, analyses]) => (
+            ).map(([category, analyses], index) => (
               <div key={category} className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500 mb-1">
+                  {index + 1}번째로 확인된 얼룩
+                </p>
                 <p className="text-gray-800 font-semibold mb-2">💧 {category}</p>
                 <ul className="list-disc list-inside text-gray-700">
                   {analyses.map((text, idx) => (
@@ -206,6 +209,7 @@ const HistoryDetailPage = () => {
             ))}
           </div>
         )}
+
 
 
 {detail.analysisType === "LABEL" && (
