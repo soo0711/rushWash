@@ -289,10 +289,10 @@ def main():
         labels, label_out = predict_label(label_img)
         if top3 is None:
             stain_class = ""
-            stain_advice = ""
+            stain_advices = ""
         else:
             stain_class = top3[0][0]
-            stain_advice = stain_guide.get(stain_class, [""])[0]
+            stain_advices = stain_guide.get(stain_class, [""])[0]
 
         label_expls = [label_guide.get(lbl, "") for lbl in labels] if labels else []
 
