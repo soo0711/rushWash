@@ -470,9 +470,6 @@ const AnalysisResultPage = () => {
                       💧 {analysisData.top1_stain}
                     </p>
                   </div>
-                  {/* <p className="text-gray-700 text-sm whitespace-pre-line">
-                    {analysisData.washing_instruction}
-                  </p> */}
                 </div>
               )}
 
