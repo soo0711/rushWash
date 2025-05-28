@@ -43,6 +43,7 @@ const AdminFabricSoftenerPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState("");
 
   // API URL 설정
   const API_URL = useProxy
@@ -82,13 +83,14 @@ const AdminFabricSoftenerPage = () => {
 
         // 카멜케이스 -> 스네이크케이스 변환
         const formattedData = apiData.map((item) => ({
-          id: item.id,
-          scent_category: item.scentCategory || "",
-          brand: item.brand || "",
-          product_name: item.productName || "",
-          created_at: item.createdAt || new Date().toISOString().split("T")[0],
-          updated_at: item.updatedAt || new Date().toISOString().split("T")[0],
-        }));
+        id: item.id,
+        scent_category: item.scentCategory || "",
+        brand: item.brand || "",
+        product_name: item.productName || "",
+        image_url: item.imageUrl || "", 
+        created_at: item.createdAt || new Date().toISOString().split("T")[0],
+        updated_at: item.updatedAt || new Date().toISOString().split("T")[0],
+      }));
 
         setFabricSofteners(formattedData);
 
@@ -152,7 +154,9 @@ const AdminFabricSoftenerPage = () => {
       scentCategory: softener.scent_category,
       brand: softener.brand,
       productName: softener.product_name,
+      imageFile: null,
     });
+    setCurrentImageUrl(softener.image_url || "");
     setIsModalOpen(true);
   };
 
@@ -176,12 +180,26 @@ const AdminFabricSoftenerPage = () => {
           ...formData,
         });
 
-        const response = await apiClient.patch(UPDATE_URL, {
-          fabricSoftenerId: currentSoftener.id,
-          scentCategory: formData.scentCategory,
-          brand: formData.brand,
-          productName: formData.productName,
-        });
+        // FormData 생성
+        const formDataToSend = new FormData();
+        formDataToSend.append("request", new Blob(
+          [JSON.stringify({
+            fabricSoftenerId: currentSoftener.id,
+            scentCategory: formData.scentCategory,
+            brand: formData.brand,
+            productName: formData.productName,
+          })],
+          { type: "application/json" }
+        ));
+
+        // 이미지 파일이 있을 경우에만 추가
+        if (formData.imageFile) {
+          formDataToSend.append("file", formData.imageFile);
+        }
+
+        const response = await apiClient.patch(UPDATE_URL, formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
         console.log("섬유유연제 수정 응답:", response.data);
 
@@ -446,17 +464,6 @@ const AdminFabricSoftenerPage = () => {
                     >
                       제품명
                     </th>
-                    <div>
-                    <label className="block text-lg font-medium text-gray-700 mb-2">
-                      제품 사진
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setFormData({ ...formData, imageFile: e.target.files[0] })}
-                      className="w-full border rounded-md p-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
                     <th
                       className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => {
@@ -614,6 +621,27 @@ const AdminFabricSoftenerPage = () => {
                     placeholder="예: 제품의 전체 이름"
                   />
                 </div>
+                <div>
+                    <label className="block text-lg font-medium text-gray-700 mb-2">
+                      제품 사진
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFormData({ ...formData, imageFile: e.target.files[0] })}
+                      className="w-full border rounded-md p-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    {currentSoftener && currentImageUrl && (
+                    <div className="mt-4">
+                      <p className="text-md text-gray-600 mb-1">현재 등록된 이미지</p>
+                      <img
+                        src={currentImageUrl}
+                        alt="기존 섬유유연제 이미지"
+                        className="w-32 h-32 object-cover rounded border border-gray-300"
+                      />
+                    </div>
+                  )}
+                  </div>
               </div>
 
               <div className="mt-8 flex justify-end space-x-4">
