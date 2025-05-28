@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AdminSidebar from "../../components/admin/AdminSidebar";
-
+import {ADMIN_AI_API} from "../../constants/api";
 const AdminAIPage = () => {
   // 상태 관리
   const [loading, setLoading] = useState(true);
@@ -11,25 +11,32 @@ const AdminAIPage = () => {
 
   // 재학습 함수
   const handleRetrain = async () => {
-    setRetraining(true);
-    try {
-      // 실제 재학습 API 호출 로직
-      console.log("재학습 시작...");
+  setRetraining(true);
+  try {
+    console.log("재학습 요청 시작...");
+    
+    const response = await post(ADMIN_AI_API.RETRAINING, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-      // 임시로 3초 대기 (실제로는 API 호출)
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    const result = await response.json();
 
-      alert("재학습이 완료되었습니다!");
-
-      // 재학습 후 데이터 다시 로드
+    if (response.ok && result.success) {
+      alert(result.data || "재학습이 완료되었습니다!");
       window.location.reload();
-    } catch (error) {
-      console.error("재학습 중 오류 발생:", error);
-      alert("재학습 중 오류가 발생했습니다: " + error.message);
-    } finally {
-      setRetraining(false);
+    } else {
+      alert(result.error?.message || "재학습에 실패했습니다.");
     }
-  };
+  } catch (error) {
+    console.error("재학습 중 오류 발생:", error);
+    alert("재학습 중 오류가 발생했습니다: " + error.message);
+  } finally {
+    setRetraining(false);
+  }
+};
   // 영어 카테고리명을 한국어로 변환 (얼룩 모델용)
   const getCategoryKoreanName = (englishName) => {
     const nameMap = {
@@ -366,7 +373,7 @@ const AdminAIPage = () => {
         {/* 상단 바 */}
         <header className="bg-white shadow-md z-10">
           <div className="flex justify-between items-center px-8 py-6">
-            <h1 className="text-3xl font-semibold text-gray-800">
+            <h1 className="text-3xl font-semibold text-gray800">
               AI 성능 및 관리
             </h1>
             <div className="ml-12">

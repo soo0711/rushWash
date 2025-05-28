@@ -72,6 +72,11 @@ export const ADMIN_WASHINGS_API = {
   GET_GOOD: `${BASE_URL}/api/admin/washings/good`,
 };
 
+// 관리자  ai 재학습 관련 API
+export const ADMIN_AI_API = {
+  RETRAINING: `${BASE_URL}/api/admin/washings/re-training`
+};
+
 // 프록시 환경에서 사용할 경로 (package.json에 "proxy": "http://localhost:8080" 설정 필요)
 export const PROXY_API = {
   // 기존 사용자 관련 엔드포인트

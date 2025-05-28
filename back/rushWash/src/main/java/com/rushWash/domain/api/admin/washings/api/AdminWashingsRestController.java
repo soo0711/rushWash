@@ -1,6 +1,8 @@
 package com.rushWash.domain.api.admin.washings.api;
 
 import com.rushWash.common.response.ApiResponse;
+import com.rushWash.common.response.CustomException;
+import com.rushWash.common.response.ErrorCode;
 import com.rushWash.domain.api.admin.washings.api.dto.request.AdminWashingDeleteRequest;
 import com.rushWash.domain.api.admin.washings.api.dto.response.WashingListResponse;
 import com.rushWash.domain.api.admin.washings.service.AdminWashingsService;
@@ -33,6 +35,18 @@ public class AdminWashingsRestController {
         adminWashingsService.deleteWashing(request.washingHistoryId());
 
         return ApiResponse.ok("분석 내역 삭제 완료");
+    }
+
+    @PostMapping("/re-training")
+    public ApiResponse reLearning() {
+        try {
+            adminWashingsService.reLearningAI();
+            return ApiResponse.ok("AI 재학습 완료");
+        } catch (CustomException e) {
+            return ApiResponse.fail(e.getErrorCode());
+        } catch (Exception e) {
+            return ApiResponse.fail(ErrorCode.PYTHON_SCRIPT_EXECUTION_FAILED); // fallback
+        }
     }
 
 }

@@ -37,7 +37,7 @@ public class AdminFabricSoftenerRestController {
     @PatchMapping
     public ApiResponse<String> updateFabricSoftenerByFabricSoftenerId(
             @RequestPart("request") AdminFabricSoftenerUpdateRequest request,
-            @RequestPart("file") MultipartFile file){
+            @RequestPart(value = "file", required = false) MultipartFile file) {
         adminFabricSoftenerService.updateFabricSoftenerByFabricSoftenerId(request.fabricSoftenerId(), request.scentCategory(),
                 request.brand(), request.productName(), file);
 
