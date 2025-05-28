@@ -140,6 +140,7 @@ const AdminFabricSoftenerPage = () => {
       scentCategory: "",
       brand: "",
       productName: "",
+      imageFile: null,
     });
     setIsModalOpen(true);
   };
@@ -197,10 +198,18 @@ const AdminFabricSoftenerPage = () => {
         // 추가 API 호출 (POST)
         console.log("섬유유연제 추가 요청 데이터:", formData);
 
-        const response = await apiClient.post(CREATE_URL, {
-          scentCategory: formData.scentCategory,
-          brand: formData.brand,
-          productName: formData.productName,
+        const formDataToSend = new FormData();
+        formDataToSend.append("request", new Blob(
+          [JSON.stringify({
+            scentCategory: formData.scentCategory,
+            brand: formData.brand,
+            productName: formData.productName,
+          })], { type: "application/json" }
+        ));
+        formDataToSend.append("file", formData.imageFile);
+
+        const response = await apiClient.post(CREATE_URL, formDataToSend, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
 
         console.log("섬유유연제 추가 응답:", response.data);
@@ -437,6 +446,17 @@ const AdminFabricSoftenerPage = () => {
                     >
                       제품명
                     </th>
+                    <div>
+                    <label className="block text-lg font-medium text-gray-700 mb-2">
+                      제품 사진
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFormData({ ...formData, imageFile: e.target.files[0] })}
+                      className="w-full border rounded-md p-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                     <th
                       className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => {
