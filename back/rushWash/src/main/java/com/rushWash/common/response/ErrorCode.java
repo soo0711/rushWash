@@ -58,7 +58,7 @@ public enum ErrorCode {
     // 파이썬 실행 관련 에러 코드
     PYTHON_SCRIPT_EXECUTION_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "파이썬 스크립트 실행에 실패했습니다."),
     PYTHON_SCRIPT_OUTPUT_INVALID(500, HttpStatus.INTERNAL_SERVER_ERROR, "파이썬 스크립트 출력이 유효하지 않습니다."),
-
+    INSUFFICIENT_DATA_FOR_RELEARNING(400, HttpStatus.BAD_REQUEST, "학습 데이터가 부족합니다."),
     // JSON 파싱 관련 에러 코드
     JSON_PARSING_FAILED(500, HttpStatus.INTERNAL_SERVER_ERROR, "JSON 파싱에 실패했습니다.");
 

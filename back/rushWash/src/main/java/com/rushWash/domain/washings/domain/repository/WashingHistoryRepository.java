@@ -104,4 +104,9 @@ public interface WashingHistoryRepository extends JpaRepository<WashingHistory, 
     """)
     List<washingDashboard> getAdminDashboardWashingList(Pageable pageable);
 
+    @Query("SELECT COUNT(stainImageUrl) FROM WashingHistory w WHERE w.estimation = true")
+    int getStainGoodCount();
+
+    @Query("SELECT COUNT(labelImageUrl) FROM WashingHistory w WHERE w.estimation = true")
+    int getLabelGoodCount();
 }
