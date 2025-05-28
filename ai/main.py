@@ -90,14 +90,24 @@ with open(LABEL_GUIDE_PATH, "r", encoding="utf-8") as f:
 
 # ───── stain 예측 ─────
 def predict_stain(image_path):
-    result = stain_model(image_path, conf=GLOBAL_CONF)[0]
+    result = stain_model(image_path, conf=GLOBAL_CONF, imgsz=320)[0]
+    if result.boxes is None or len(result.boxes) == 0:
+        return None, None
+
     classes = result.boxes.cls.cpu().numpy().astype(int)
     probs = result.boxes.conf.cpu().numpy()
     boxes = result.boxes.xyxy.cpu().numpy()
 
     keep = np.array(
-        [probs[i] >= CLASS_CONF_TH[STAIN_CLASSES[cls]] for i, cls in enumerate(classes)]
+        [
+            probs[i] >= CLASS_CONF_TH[STAIN_CLASSES[cls]]
+            for i, cls in enumerate(classes)
+        ],
+        dtype=bool,
     )
+
+    if not keep.any():
+        return None, None
     classes, probs, boxes = classes[keep], probs[keep], boxes[keep]
     if len(classes) == 0:
         return [], ""
@@ -147,7 +157,7 @@ def predict_stain(image_path):
 def predict_label(image_path):
     result = label_model.predict(
         source=image_path,
-        imgsz=1600,
+        imgsz=2048,
         conf=LABEL_CONF,
         iou=0.35,
         max_det=1000,
@@ -157,6 +167,8 @@ def predict_label(image_path):
         verbose=False,
     )[0]
 
+    if result.boxes is None or len(result.boxes) == 0:
+        return None, None
     boxes = result.boxes.xyxy.cpu().numpy()
     classes = result.boxes.cls.cpu().numpy().astype(int)
     probs = result.boxes.conf.cpu().numpy()
@@ -206,43 +218,61 @@ def main():
 
     if analysis_type == "stain_only":
         top3, output_path = predict_stain(image_path)
-        output = {
-            "detected_stain": {
-                "top3": [{"class": c, "confidence": s} for c, s in top3]
-            },
-            "washing_instructions": [],
-            "output_image_path": output_path,
-        }
+        if top3 is None:
+            output = {
+                "detected_stain": {
+                    "top3": [{"class": "", "confidence": ""} for _ in range(3)]
+                },
+                "washing_instructions": [{"class": "", "instructions": ["", "", ""]}],
+                "output_image_path": "",
+            }
+        else:
+            output = {
+                "detected_stain": {
+                    "top3": [{"class": c, "confidence": s} for c, s in top3]
+                },
+                "washing_instructions": [],
+                "output_image_path": output_path,
+            }
 
-        seen_classes = set()
+            seen_classes = set()
 
-        for stain, _ in top3:
-            if stain in seen_classes:
-                continue  # 중복 방지
-            seen_classes.add(stain)
+            for stain, _ in top3:
+                if stain in seen_classes:
+                    continue  # 중복 방지
+                seen_classes.add(stain)
 
-            methods = stain_guide.get(stain, [])
-            if isinstance(methods, list) and len(methods) > 0:
-                first = methods[0]
-                remaining = methods[1:]
-                rand = random.sample(remaining, k=min(2, len(remaining)))
-                combined = [first] + rand
-            else:
-                combined = ["정보 없음"]
+                methods = stain_guide.get(stain, [])
+                if isinstance(methods, list) and len(methods) > 0:
+                    first = methods[0]
+                    remaining = methods[1:]
+                    rand = random.sample(remaining, k=min(2, len(remaining)))
+                    combined = [first] + rand
+                else:
+                    combined = ["정보 없음"]
 
-            output["washing_instructions"].append(
-                {"class": stain, "instructions": combined}
-            )
+                output["washing_instructions"].append(
+                    {"class": stain, "instructions": combined}
+                )
 
         print(json.dumps(output, ensure_ascii=False, indent=2))
 
     elif analysis_type == "label_only":
         labels, output_path = predict_label(image_path)
-        output = {
-            "detected_labels": labels,
-            "label_explanation": [label_guide.get(lbl, "정보 없음") for lbl in labels],
-            "output_image_path": output_path,
-        }
+        if labels is None:
+            output = {
+                "detected_labels": [],
+                "label_explanation": [],
+                "output_image_path": "",
+            }
+        else:
+            output = {
+                "detected_labels": labels,
+                "label_explanation": [
+                    label_guide.get(lbl, "정보 없음") for lbl in labels
+                ],
+                "output_image_path": output_path,
+            }
         print(json.dumps(output, ensure_ascii=False, indent=2))
 
     elif analysis_type == "stain_and_label":
@@ -257,47 +287,50 @@ def main():
 
         top3, stain_out = predict_stain(stain_img)
         labels, label_out = predict_label(label_img)
+        if top3 is None:
+            stain_class = ""
+            stain_advice = ""
+        else:
+            stain_class = top3[0][0]
+            stain_advice = stain_guide.get(stain_class, [""])[0]
 
-        if not top3:
-            print("❌ 얼룩이 감지되지 않았습니다.")
-            sys.exit(1)
-
-        stain_class = top3[0][0]
-        stain_advice = stain_guide.get(stain_class, ["정보 없음"])[0]
-        label_expls = [label_guide.get(lbl, "정보 없음") for lbl in labels]
-
+        label_expls = [label_guide.get(lbl, "") for lbl in labels] if labels else []
         prompt = build_llm_prompt(stain_class, stain_advice, label_expls)
-        input_ids = llm_tokenizer(prompt, return_tensors="pt").to("cuda")["input_ids"]
 
-        with torch.no_grad():
-            output = llm_model.generate(
-                input_ids,
-                max_new_tokens=256,
-                do_sample=True,
-                temperature=0.7,
-                top_p=0.9,
-                top_k=50,
-                pad_token_id=llm_tokenizer.eos_token_id,
+        if stain_class == "":
+            llm_output = ""
+        else:
+            input_ids = llm_tokenizer(prompt, return_tensors="pt").to("cuda")[
+                "input_ids"
+            ]
+            with torch.no_grad():
+                output = llm_model.generate(
+                    input_ids,
+                    max_new_tokens=256,
+                    do_sample=True,
+                    temperature=0.7,
+                    top_p=0.9,
+                    top_k=50,
+                    pad_token_id=llm_tokenizer.eos_token_id,
+                )
+            decoded = (
+                llm_tokenizer.decode(output[0], skip_special_tokens=True)
+                .split("세탁 방법:")[-1]
+                .strip()
             )
-
-        decoded = (
-            llm_tokenizer.decode(output[0], skip_special_tokens=True)
-            .split("답변:")[-1]
-            .strip()
-        )
-        # "세탁 방법:" 이후 문장만 추출
-        if "세탁 방법:" in decoded:
-            decoded = decoded.split("세탁 방법:")[-1].strip()
+            llm_output = decoded
 
         output = {
             "top1_stain": stain_class,
             "washing_instruction": stain_advice,
-            "detected_labels": labels,
+            "detected_labels": labels if labels else [],
             "label_explanation": label_expls,
-            "output_image_paths": {"stain": stain_out, "label": label_out},
-            "llm_generated_guide": decoded,
+            "output_image_paths": {
+                "stain": stain_out if top3 else "",
+                "label": label_out if labels else "",
+            },
+            "llm_generated_guide": llm_output,
         }
-
         print(json.dumps(output, ensure_ascii=False, indent=2))
     else:
         print(
