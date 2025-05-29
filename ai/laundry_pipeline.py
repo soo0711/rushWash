@@ -14,18 +14,8 @@ LABEL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
 STAIN_GUIDE_PATH = os.path.join(BASE_DIR, "stain", "stain_washing_guidelines.json")
 LABEL_GUIDE_PATH = os.path.join(BASE_DIR, "symbol", "label_symbol_guide.json")
 
+
 # ───── 클래스 및 설정 ─────
-STAIN_CLASSES = [
-    "blood",
-    "coffee",
-    "earth",
-    "ink",
-    "kimchi",
-    "lipstick",
-    "mustard",
-    "oil",
-    "wine",
-]
 CLASS_CONF_TH = {
     "blood": 0.260,
     "coffee": 0.350,
@@ -37,6 +27,19 @@ CLASS_CONF_TH = {
     "oil": 0.360,
     "wine": 0.100,
 }
+
+STAIN_CLASSES = [
+    "blood",
+    "coffee",
+    "earth",
+    "ink",
+    "kimchi",
+    "lipstick",
+    "mustard",
+    "oil",
+    "wine",
+]
+
 GLOBAL_CONF = min(CLASS_CONF_TH.values())
 LABEL_CONF = 0.3
 TOP_K = 3
