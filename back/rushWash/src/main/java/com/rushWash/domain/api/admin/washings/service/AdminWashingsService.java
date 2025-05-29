@@ -10,6 +10,7 @@ import com.rushWash.domain.washings.service.WashingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -73,7 +74,7 @@ public class AdminWashingsService {
         executePythonScript();
     }
 
-
+    @Transactional
     private String executePythonScript() {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(
