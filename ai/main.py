@@ -289,17 +289,20 @@ def main():
         labels, label_out = predict_label(label_img)
         if top3 is None:
             stain_class = ""
-            stain_advice = ""
+            stain_advices = ""
         else:
             stain_class = top3[0][0]
-            stain_advice = stain_guide.get(stain_class, [""])[0]
+            stain_advices = stain_guide.get(stain_class, [""])[0]
 
         label_expls = [label_guide.get(lbl, "") for lbl in labels] if labels else []
-        prompt = build_llm_prompt(stain_class, stain_advice, label_expls)
 
-        if stain_class == "":
+        # DN_wash가 포함되어 있다면 고정된 멘트 출력
+        if any("세탁 금지" in expl for expl in label_expls):
+            llm_output = "감지된 세탁 기호에 따라 물세탁이 불가하여 가정에서 얼룩 제거가 어려운 제품입니다. 반드시 전문 세탁소에 의뢰하시기 바랍니다."
+        elif not stain_class:
             llm_output = ""
         else:
+            prompt = build_llm_prompt(stain_class, stain_advices, label_expls)
             input_ids = llm_tokenizer(prompt, return_tensors="pt").to("cuda")[
                 "input_ids"
             ]
@@ -308,21 +311,21 @@ def main():
                     input_ids,
                     max_new_tokens=256,
                     do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
-                    top_k=50,
+                    temperature=0.6,
+                    top_p=0.85,
+                    top_k=30,
                     pad_token_id=llm_tokenizer.eos_token_id,
                 )
-            decoded = (
-                llm_tokenizer.decode(output[0], skip_special_tokens=True)
-                .split("세탁 방법:")[-1]
-                .strip()
+            decoded = llm_tokenizer.decode(output[0], skip_special_tokens=True)
+            llm_output = (
+                decoded.split("세탁 방법:")[-1].strip()
+                if "세탁 방법:" in decoded
+                else decoded.strip()
             )
-            llm_output = decoded
 
         output = {
             "top1_stain": stain_class,
-            "washing_instruction": stain_advice,
+            "washing_instructions": stain_advices,
             "detected_labels": labels if labels else [],
             "label_explanation": label_expls,
             "output_image_paths": {
@@ -332,6 +335,7 @@ def main():
             "llm_generated_guide": llm_output,
         }
         print(json.dumps(output, ensure_ascii=False, indent=2))
+
     else:
         print(
             "⚠️ analysis_type은 'stain_only', 'label_only', 또는 'stain_and_label' 중 하나여야 합니다."

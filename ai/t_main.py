@@ -66,28 +66,40 @@ def build_llm_prompt(stain_class, stain_advices, label_expls):
     if not stain_class or not stain_advices:
         return ""
 
+    # 얼룩 제거법 후보 정리
     stain_list_text = "\n".join(
         [f"{i+1}. {advice}" for i, advice in enumerate(stain_advices)]
     )
+
+    # 세탁 기호 요약 설명 정리
     label_text = (
-        "세탁 기호가 감지되지 않았습니다."
+        "세탁 조건이 감지되지 않았습니다."
         if not label_expls
-        else ", ".join(label_expls)
+        else "\n" + "\n".join(f"- {e}" for e in label_expls)
     )
 
-    return (
-        f"다음은 옷에 묻은 얼룩과 해당 세탁 기호에 대한 정보입니다:\n\n"
-        f"- 얼룩 종류: {stain_class}\n"
-        f"- 얼룩 제거법 후보 (아래 중 **단 하나만** 사용할 것):\n{stain_list_text}\n"
-        f"- 감지된 세탁 기호 해석: {label_text}\n\n"
-        f"이 정보를 바탕으로, 다음 조건을 모두 만족하는 **한 문단짜리 세탁 안내 문장**을 작성하세요:\n"
-        f"1. 반드시 제거법 후보 중 **하나만 선택하고**, 나머지 방법은 **절대 언급하지 마세요**\n"
-        f"2. 선택한 제거법이 왜 적절한지 1문장 설명하세요\n"
-        f"3. 감지된 세탁 기호가 무엇인지 요약하고, 그 기호와 제거법이 어떻게 잘 어울리는지 1문장으로 설명하세요\n"
-        f"4. 전체는 인사말 없이, 한 문단으로, **명령형** 문장으로 작성하세요 (예: '~하세요')\n"
-        f"5. 숫자, 리스트, 줄바꿈, 개조식 문장은 사용하지 마세요\n\n"
-        f"세탁 방법:"
-    )
+    # 프롬프트 템플릿
+    prompt = f"""당신은 얼룩 제거 전문가입니다.
+
+다음은 옷의 얼룩 종류와 세탁 조건에 대한 정보입니다:
+
+▸ 얼룩 종류: {stain_class}
+▸ 얼룩 제거법 후보:
+{stain_list_text}
+▸ 옷의 세탁 조건:
+{label_text}
+
+이 정보를 참고하여 얼룩 제거 방법을 아래 조건에 맞게 안내해 주세요:
+
+- **가장 적절한 제거 방법 하나만 선택**하여 설명하세요. 나머지는 언급하지 마세요.
+- '세탁 기호'나 '기호명' 같은 표현은 사용하지 마세요.
+- 세탁 조건은 자연스럽게 문장 안에 녹여 설명하세요.  
+  예: '표백 금지' → '표백제는 사용하지 마세요'  
+      '회전식 건조 금지' → '자연 건조를 권장합니다'
+- 인사말 없이, 친절하고 명확한 한 문단으로 작성하세요.
+
+세탁 방법:"""
+    return prompt
 
 
 # ───── 모델 및 가이드 로딩 ─────
@@ -314,11 +326,15 @@ def main():
                 stain_advices = ["정보 없음"]
 
         label_expls = [label_guide.get(lbl, "") for lbl in labels] if labels else []
-        prompt = build_llm_prompt(stain_class, stain_advices, label_expls)
 
-        if not stain_class:
+        # DN_wash가 포함되어 있다면 고정된 멘트 출력
+        # DN_wash가 포함되어 있다면 고정된 멘트 출력
+        if any("세탁 금지" in expl for expl in label_expls):
+            llm_output = "감지된 세탁 기호에 따라 물세탁이 불가하여 가정에서 얼룩 제거가 어려운 제품입니다. 반드시 전문 세탁소에 의뢰하시기 바랍니다."
+        elif not stain_class:
             llm_output = ""
         else:
+            prompt = build_llm_prompt(stain_class, stain_advices, label_expls)
             input_ids = llm_tokenizer(prompt, return_tensors="pt").to("cuda")[
                 "input_ids"
             ]
@@ -332,12 +348,12 @@ def main():
                     top_k=30,
                     pad_token_id=llm_tokenizer.eos_token_id,
                 )
-            decoded = (
-                llm_tokenizer.decode(output[0], skip_special_tokens=True)
-                .split("세탁 방법:")[-1]
-                .strip()
+            decoded = llm_tokenizer.decode(output[0], skip_special_tokens=True)
+            llm_output = (
+                decoded.split("세탁 방법:")[-1].strip()
+                if "세탁 방법:" in decoded
+                else decoded.strip()
             )
-            llm_output = decoded
 
         output = {
             "top1_stain": stain_class,

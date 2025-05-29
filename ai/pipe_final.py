@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 MariaDB → YOLO 데이터 복사 → (Re)Train → Optimal per-class conf 찾기 → Evaluate → JSON 저장
- - Ray-tune 콜백 충돌 패치를 포함합니다.
- - stain, symbol 모델 모두 fp32→fp16 로드, 최적화된 평가 로직 적용
+ - Ray-tune 콜백 패치 포함
+ - stain, symbol 모델 모두 fp32→fp16 로드
+ - DB 접속 정보는 실행 시 인자로 전달
 """
 import os
 import sys
@@ -15,9 +16,33 @@ import yaml
 import torch
 import numpy as np
 import pymysql
+import argparse
 from PIL import Image, ImageOps
 from collections import defaultdict
 from ultralytics import YOLO
+
+# ──────────────────────────── CLI 인자 파싱 ────────────────────────────
+parser = argparse.ArgumentParser(description="YOLO 파이프라인 실행")
+parser.add_argument("--db-host", required=True, help="DB 호스트")
+parser.add_argument("--db-port", type=int, required=True, help="DB 포트")
+parser.add_argument("--db-user", required=True, help="DB 사용자")
+parser.add_argument("--db-password", required=True, help="DB 비밀번호")
+parser.add_argument("--db-name", required=True, help="DB 이름")
+args = parser.parse_args()
+
+# ──────────────────────────── DB 설정 ────────────────────────────
+DB_HOST = args.db_host
+DB_PORT = args.db_port
+DB_USER = args.db_user
+DB_PASSWORD = args.db_password
+DB_NAME = args.db_name
+
+SQL_QUERY = (
+    "SELECT stain_image_url, label_image_url "
+    "FROM washing_history "
+    "WHERE estimation = 1 "
+    "  AND (stain_image_url IS NOT NULL OR label_image_url IS NOT NULL);"
+)
 
 # ──────────────────────────── Ray 콜백 패치 (반드시 최상단) ────────────────────────────
 try:
@@ -48,27 +73,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ──────────────────────────── 경로 설정 ────────────────────────────
+# ──────────────────────────── 경로 및 설정 ────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_ROOT = os.path.abspath(os.path.join(BASE_DIR, os.pardir))
 
+# 모델 경로
 STAIN_MODEL_PATH = os.path.join(BASE_DIR, "stain", "stain_cls.pt")
 SYMBOL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
 
-# MariaDB 설정
-DB_HOST, DB_PORT = "localhost", 3306
-DB_USER, DB_PASSWORD, DB_NAME = "", "", ""
-SQL_QUERY = (
-    "SELECT stain_image_url, label_image_url "
-    "FROM washing_history "
-    "WHERE estimation = 1 "
-    "  AND (stain_image_url IS NOT NULL OR label_image_url IS NOT NULL);"
-)
-
-# 데이터/모델 디렉토리
+# 레이블 출력/입력 경로
 STAIN_LABEL_DIR = os.path.join(SRC_ROOT, "images", "output", "stain", "labels")
 SYMBOL_LABEL_DIR = os.path.join(SRC_ROOT, "images", "output", "symbol", "labels")
 
+# 학습/테스트 데이터 경로
 TRAIN_STAIN_IMG_DIR = os.path.join(BASE_DIR, "data", "stain", "train", "images")
 TRAIN_STAIN_LABEL_DIR = os.path.join(BASE_DIR, "data", "stain", "train", "labels")
 TRAIN_SYM_IMG_DIR = os.path.join(BASE_DIR, "data", "symbol", "train", "images")
@@ -77,16 +94,19 @@ TRAIN_SYM_LABEL_DIR = os.path.join(BASE_DIR, "data", "symbol", "train", "labels"
 TEST_STAIN_IMG_DIR = os.path.join(BASE_DIR, "data", "stain", "test", "images")
 SYMBOL_TEST_DIR = os.path.join(BASE_DIR, "data", "symbol", "test", "images")
 
+# YAML 데이터 파일
 STAIN_DATA_YAML = os.path.join(BASE_DIR, "data", "stain", "data.yaml")
 SYMBOL_DATA_YAML = os.path.join(BASE_DIR, "data", "symbol", "data.yaml")
 
+# 모델 저장 디렉토리
 MODEL_BASE_STAIN = os.path.join(BASE_DIR, "model", "stain")
 MODEL_BASE_SYM = os.path.join(BASE_DIR, "model", "symbol")
 
+# 결과 공개 폴더
 PERF_ROOT = os.path.join(BASE_DIR, os.pardir, "front", "fe-rw", "public", "performance")
 
-# 필요한 디렉토리 생성
-for p in [
+# 디렉토리 생성
+for path in [
     STAIN_LABEL_DIR,
     SYMBOL_LABEL_DIR,
     TRAIN_STAIN_IMG_DIR,
@@ -100,7 +120,7 @@ for p in [
     os.path.join(PERF_ROOT, "stain"),
     os.path.join(PERF_ROOT, "symbol"),
 ]:
-    os.makedirs(p, exist_ok=True)
+    os.makedirs(path, exist_ok=True)
 
 # ──────────────────────────── 학습 하이퍼파라미터 ────────────────────────────
 STAIN_CFG = dict(
@@ -183,7 +203,6 @@ def copy_pair(url, dst_img_dir, src_lbl_dir, dst_lbl_dir):
 
 
 def load_yolo(weights, want_gpu=True):
-    """fp32 → fuse → fp16 로드, GPU OOM 시 CPU 폴백"""
     if want_gpu and torch.cuda.is_available():
         try:
             model = YOLO(weights).to("cuda:0")
@@ -201,8 +220,8 @@ def load_yolo(weights, want_gpu=True):
     return YOLO(weights), "cpu"
 
 
-# ──────────────────────────── DB에서 데이터 복사 ────────────────────────────
-def db_fetch():
+def db_fetch() -> None:
+    """MariaDB에서 이미지 URL을 가져와 로컬 train 디렉토리로 복사"""
     logger.info("DB fetch 시작")
     conn = pymysql.connect(
         host=DB_HOST,
@@ -391,51 +410,61 @@ def evaluate_stain(weights_path):
     return {"per_class": per, "overall": overall}
 
 
-# ──────────────────────────── 평가: Symbol ────────────────────────────
+# ──────────────────────────── 평가: Symbol (Zero-AP 제외 + CONF_THRESH/AUGMENT 적용) ────────────────────────────
+SYMBOL_CONF = 0.1  # summary 스크립트의 CONF_THRESH
+SYMBOL_AUG = True  # summary 스크립트의 AUGMENT
+
+
 def evaluate_symbol(weights_path):
     logger.info(f"Evaluating symbol: {weights_path}")
     model, device = load_yolo(weights_path)
-    data = yaml.safe_load(open(SYMBOL_DATA_YAML))
-    names = data["names"]
 
-    # 1차 val → AP>0 클래스만 추리기
+    # 1) support 계산하여 zero-AP 제외용 valid_ids 추출
+    #    summary 스크립트에서는 별도 함수(calc_support)가 있지만,
+    #    여기선 val 결과의 per_class로 바로 뽑아도 무방합니다.
     first = model.val(
         data=SYMBOL_DATA_YAML,
         split="test",
         imgsz=SYMBOL_CFG["imgsz"],
-        conf=0.5,
+        conf=SYMBOL_CONF,
         augment=False,
         device=device,
         verbose=False,
     )
-    initial = {int(idx): ap for idx, ap in zip(first.ap_class_index, first.maps)}
-    valid_ids = [idx for idx, ap in initial.items() if ap > 0.0]
+    # per-class AP 매핑
+    initial_maps = dict(zip(first.ap_class_index, first.maps))
+    valid_ids = [int(idx) for idx, ap in initial_maps.items() if ap > 0.0]
+    logger.debug(f"Symbol valid IDs (AP>0): {valid_ids}")
 
-    # 2차 val → valid_ids만
+    # 2) 본 평가: conf=SYMBOL_CONF, augment=SYMBOL_AUG, classes=valid_ids
     final = model.val(
         data=SYMBOL_DATA_YAML,
         split="test",
         imgsz=SYMBOL_CFG["imgsz"],
-        conf=0.5,
-        augment=SYMBOL_CFG["augment"],
+        conf=SYMBOL_CONF,
+        augment=SYMBOL_AUG,
         classes=valid_ids,
         device=device,
         verbose=False,
     )
-    P, R, m50, m5095 = final.box.mean_results()
+    # 핵심 지표 추출
+    P, R, mAP50, mAP5095 = final.box.mean_results()
     inf_ms = final.speed.get("inference", 0.0)
-    maps = {int(idx): float(ap) for idx, ap in zip(final.ap_class_index, final.maps)}
-    per_class = {names[i]: maps.get(i, 0.0) for i in range(len(names))}
+
+    # 클래스별 AP 다시 매핑
+    names = yaml.safe_load(open(SYMBOL_DATA_YAML))["names"]
+    ap_map = {int(idx): float(ap) for idx, ap in zip(final.ap_class_index, final.maps)}
+    per_cls = {name: ap_map.get(i, 0.0) for i, name in enumerate(names)}
 
     metrics = {
         "precision": P,
         "recall": R,
-        "mAP50": m50,
-        "mAP50-95": m5095,
+        "mAP50": mAP50,
+        "mAP50-95": mAP5095,
         "inference_time_ms": inf_ms,
-        "per_class": per_class,
+        "per_class": per_cls,
     }
-    logger.info(f"Symbol metrics: {metrics}")
+    logger.info(f"Symbol metrics (filtered): {metrics}")
     return metrics
 
 
