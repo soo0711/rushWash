@@ -7,7 +7,7 @@ import java.util.List;
 public record AnalysisStainAndLabelResponse(
         @JsonProperty("top1_stain")
         String top1Stain,
-        @JsonProperty("washing_instruction")
+        @JsonProperty("washing_instructions")
         String washingInstruction,
         @JsonProperty("detected_labels")
         List<String> detectedLabels,
