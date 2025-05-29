@@ -181,6 +181,7 @@ public class AnalysisService {
             AnalysisStainAndLabelResponse response = objectMapper.readValue(jsonOutput, AnalysisStainAndLabelResponse.class);
 
             // 필드 유효성 검증
+            /*
             boolean isInvalid =
                     response.top1Stain() == null || response.top1Stain().isBlank()
                             || response.washingInstruction() == null || response.washingInstruction().isBlank()
@@ -196,6 +197,8 @@ public class AnalysisService {
                 fileManagerService.deleteFile(savedFilePathLabel);
                 throw new CustomException(ErrorCode.STAIN_LABEL_IMAGE_REUPLOAD);
             }
+             */
+
 
             // WashingHistory와 WashingResult 저장
             WashingHistory washingHistory = washingService.addWashingHistoryByStainAndLabelImage(userId, AnalysisType.LABEL_AND_STAIN,
