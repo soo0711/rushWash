@@ -215,6 +215,7 @@ public class AnalysisService {
             for (int i = 0; i < detectedLabels.size(); i++) {
                 String category = detectedLabels.get(i);
                 String explanation = labelExplanation.get(i);
+                log.info("Saving result - category: {}, explanation: {}", category, explanation);
                 washingService.addWashingResult(washingHistory, category, explanation);
             }
 
