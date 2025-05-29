@@ -79,7 +79,7 @@ public class AdminWashingsService {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "python",
-                    pythonScriptPath + "/main.py",
+                    pythonScriptPath + "/pipe_final.py",
                     "--db-host", dbHost,
                     "--db-port", dbPort,
                     "--db-user", dbUser,
