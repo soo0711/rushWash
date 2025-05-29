@@ -169,6 +169,7 @@ public class AnalysisService {
 
         // 2. 파이썬 불러오기
         String pythonOutput = executePythonScriptByStainLabel("stain_and_label", absoluteImagePathStain, absoluteImagePathLabel);
+        log.info("Raw Python Output: {}", pythonOutput);
 
         // 3. JSON 값 응답
         try {
@@ -177,6 +178,7 @@ public class AnalysisService {
                 throw new CustomException(ErrorCode.PYTHON_SCRIPT_OUTPUT_INVALID);
             }
             String jsonOutput = pythonOutput.substring(jsonStart);
+            log.info("Parsed JSON String: {}", jsonOutput);
 
             AnalysisStainAndLabelResponse response = objectMapper.readValue(jsonOutput, AnalysisStainAndLabelResponse.class);
 

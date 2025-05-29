@@ -13,12 +13,14 @@ import com.rushWash.domain.washings.domain.WashingResult;
 import com.rushWash.domain.washings.domain.repository.WashingHistoryRepository;
 import com.rushWash.domain.washings.domain.repository.WashingResultRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class WashingService {
 
@@ -94,11 +96,6 @@ public class WashingService {
     }
 
     public WashingHistory addWashingHistoryByStainAndLabelImage(int userId, AnalysisType analysisType, String stainImageUrl, String labelImageUrl){
-        System.out.println(">>> addWashingHistoryByStainAndLabelImage 호출됨");
-        System.out.println("userId: " + userId);
-        System.out.println("analysisType: " + analysisType);
-        System.out.println("stainImageUrl: " + stainImageUrl);
-        System.out.println("labelImageUrl: " + labelImageUrl);
         WashingHistory washingHistory = washingHistoryRepository.save(
                 WashingHistory.builder()
                         .userId(userId)
@@ -107,7 +104,7 @@ public class WashingService {
                         .labelImageUrl(labelImageUrl)
                         .build()
         );
-        System.out.println("저장 완료, id: " + washingHistory.getId());
+        log.info("저장 완료, id: " + washingHistory.getId());
         return washingHistory;
     }
 
