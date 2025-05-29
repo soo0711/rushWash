@@ -11,8 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
 @Component
 public class FileManagerService {
@@ -25,7 +24,8 @@ public class FileManagerService {
 
     // 단일 파일
     public String saveFile(int userId, MultipartFile file) {
-        String directoryName = userId + "_" + System.currentTimeMillis();
+        String uniqueId = UUID.randomUUID().toString();
+        String directoryName = userId + "_" + uniqueId;
         String filePath = uploadPath + "/images/" + directoryName;
 
         File directory = new File(filePath);
