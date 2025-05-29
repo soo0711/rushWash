@@ -328,7 +328,6 @@ def main():
         label_expls = [label_guide.get(lbl, "") for lbl in labels] if labels else []
 
         # DN_wash가 포함되어 있다면 고정된 멘트 출력
-        # DN_wash가 포함되어 있다면 고정된 멘트 출력
         if any("세탁 금지" in expl for expl in label_expls):
             llm_output = "감지된 세탁 기호에 따라 물세탁이 불가하여 가정에서 얼룩 제거가 어려운 제품입니다. 반드시 전문 세탁소에 의뢰하시기 바랍니다."
         elif not stain_class:

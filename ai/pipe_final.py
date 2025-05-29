@@ -4,6 +4,7 @@ MariaDB → YOLO 데이터 복사 → (Re)Train → Optimal per-class conf 찾�
  - Ray-tune 콜백 패치 포함
  - stain, symbol 모델 모두 fp32→fp16 로드
  - DB 접속 정보는 실행 시 인자로 전달
+
 """
 import os
 import sys
@@ -36,7 +37,6 @@ DB_PORT = args.db_port
 DB_USER = args.db_user
 DB_PASSWORD = args.db_password
 DB_NAME = args.db_name
-
 SQL_QUERY = (
     "SELECT stain_image_url, label_image_url "
     "FROM washing_history "
@@ -77,15 +77,11 @@ logger = logging.getLogger(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_ROOT = os.path.abspath(os.path.join(BASE_DIR, os.pardir))
 
-# 모델 경로
 STAIN_MODEL_PATH = os.path.join(BASE_DIR, "stain", "stain_cls.pt")
 SYMBOL_MODEL_PATH = os.path.join(BASE_DIR, "symbol", "laundry_labels_cls.pt")
-
-# 레이블 출력/입력 경로
 STAIN_LABEL_DIR = os.path.join(SRC_ROOT, "images", "output", "stain", "labels")
 SYMBOL_LABEL_DIR = os.path.join(SRC_ROOT, "images", "output", "symbol", "labels")
 
-# 학습/테스트 데이터 경로
 TRAIN_STAIN_IMG_DIR = os.path.join(BASE_DIR, "data", "stain", "train", "images")
 TRAIN_STAIN_LABEL_DIR = os.path.join(BASE_DIR, "data", "stain", "train", "labels")
 TRAIN_SYM_IMG_DIR = os.path.join(BASE_DIR, "data", "symbol", "train", "images")
@@ -94,19 +90,13 @@ TRAIN_SYM_LABEL_DIR = os.path.join(BASE_DIR, "data", "symbol", "train", "labels"
 TEST_STAIN_IMG_DIR = os.path.join(BASE_DIR, "data", "stain", "test", "images")
 SYMBOL_TEST_DIR = os.path.join(BASE_DIR, "data", "symbol", "test", "images")
 
-# YAML 데이터 파일
 STAIN_DATA_YAML = os.path.join(BASE_DIR, "data", "stain", "data.yaml")
 SYMBOL_DATA_YAML = os.path.join(BASE_DIR, "data", "symbol", "data.yaml")
 
-# 모델 저장 디렉토리
 MODEL_BASE_STAIN = os.path.join(BASE_DIR, "model", "stain")
 MODEL_BASE_SYM = os.path.join(BASE_DIR, "model", "symbol")
-
-# 결과 공개 폴더
 PERF_ROOT = os.path.join(BASE_DIR, os.pardir, "front", "fe-rw", "public", "performance")
-
-# 디렉토리 생성
-for path in [
+for p in [
     STAIN_LABEL_DIR,
     SYMBOL_LABEL_DIR,
     TRAIN_STAIN_IMG_DIR,
@@ -120,13 +110,13 @@ for path in [
     os.path.join(PERF_ROOT, "stain"),
     os.path.join(PERF_ROOT, "symbol"),
 ]:
-    os.makedirs(path, exist_ok=True)
+    os.makedirs(p, exist_ok=True)
 
-# ──────────────────────────── 학습 하이퍼파라미터 ────────────────────────────
+# ──────────────────────────── 학습 파라미터 ────────────────────────────
 STAIN_CFG = dict(
     data=STAIN_DATA_YAML,
     epochs=5,
-    patience=2,
+    patience=1,
     batch=2,
     imgsz=1600,
     device="cuda:0",
@@ -141,7 +131,7 @@ STAIN_CFG = dict(
 SYMBOL_CFG = dict(
     data=SYMBOL_DATA_YAML,
     epochs=5,
-    patience=2,
+    patience=1,
     batch=2,
     imgsz=2048,
     device="cuda:0",
@@ -154,7 +144,6 @@ SYMBOL_CFG = dict(
     mixup=0.3,
 )
 
-# ──────────────────────────── 평가 설정 (초기값) ────────────────────────────
 EVAL_STAIN_SIZE = 320
 CLASS_NAMES_STAIN = [
     "blood",
@@ -168,15 +157,15 @@ CLASS_NAMES_STAIN = [
     "wine",
 ]
 CLASS_CONF_THRESH = {
-    "blood": 0.260,
-    "coffee": 0.350,
-    "earth": 0.230,
-    "ink": 0.190,
-    "kimchi": 0.500,
-    "lipstick": 0.330,
-    "mustard": 0.160,
-    "oil": 0.360,
-    "wine": 0.100,
+    "blood": 0.26,
+    "coffee": 0.35,
+    "earth": 0.23,
+    "ink": 0.19,
+    "kimchi": 0.5,
+    "lipstick": 0.33,
+    "mustard": 0.16,
+    "oil": 0.36,
+    "wine": 0.1,
 }
 GLOBAL_CONF = min(CLASS_CONF_THRESH.values())
 
@@ -187,41 +176,41 @@ def get_next_run(root: str) -> str:
     return str(max(runs) + 1) if runs else "1"
 
 
-def copy_pair(url, dst_img_dir, src_lbl_dir, dst_lbl_dir):
+def copy_pair(url: str, dst_img_dir: str, src_lbl_dir: str, dst_lbl_dir: str):
+    """
+    이미지 URL과 대응 라벨(.txt)을 src_lbl_dir에서 찾아
+    dst_img_dir, dst_lbl_dir로 복사
+    """
+    logger.debug(f"DB URL: {url}")
     if not url:
         logger.warning("Empty URL, skip.")
         return
-    rel = url.lstrip("/")
-    src_img = os.path.join(SRC_ROOT, rel)
-    name, _ = os.path.splitext(os.path.basename(src_img))
+    # 이미지 경로 해석
+    if os.path.isabs(url) and os.path.exists(url):
+        src_img = url
+        logger.debug(f"Absolute path used: {src_img}")
+    else:
+        rel = url.lstrip("/")
+        src_img = os.path.join(SRC_ROOT, rel)
+        logger.debug(f"Resolved relative to SRC_ROOT: {src_img}")
+    name = os.path.splitext(os.path.basename(src_img))[0]
     src_lbl = os.path.join(src_lbl_dir, f"{name}.txt")
-    if os.path.exists(src_img) and os.path.exists(src_lbl):
+    img_exists = os.path.exists(src_img)
+    lbl_exists = os.path.exists(src_lbl)
+    logger.debug(f"Exists? Image: {img_exists}, Label: {lbl_exists}")
+    if img_exists and lbl_exists:
         shutil.copy2(src_img, os.path.join(dst_img_dir, os.path.basename(src_img)))
         shutil.copy2(src_lbl, os.path.join(dst_lbl_dir, f"{name}.txt"))
+        logger.info(f"Copied {name} → images and labels dirs")
     else:
-        logger.warning(f"[MISS] {src_img} or {src_lbl} missing")
+        if not img_exists:
+            logger.error(f"[MISS-IMG] {src_img} not found")
+        if not lbl_exists:
+            logger.error(f"[MISS-LBL] {src_lbl} not found")
 
 
-def load_yolo(weights, want_gpu=True):
-    if want_gpu and torch.cuda.is_available():
-        try:
-            model = YOLO(weights).to("cuda:0")
-            model.fuse()
-            model = model.to("cuda:0", dtype=torch.float16)
-            logger.info(f"Loaded {weights} on GPU (fp16).")
-            return model, "cuda:0"
-        except RuntimeError as e:
-            if "out of memory" in str(e).lower():
-                logger.warning("GPU OOM → CPU fallback")
-                torch.cuda.empty_cache()
-            else:
-                raise
-    logger.info(f"Loaded {weights} on CPU.")
-    return YOLO(weights), "cpu"
-
-
-def db_fetch() -> None:
-    """MariaDB에서 이미지 URL을 가져와 로컬 train 디렉토리로 복사"""
+# ──────────────────────────── DB에서 이미지 + 라벨 복사 ────────────────────────────
+def db_fetch():
     logger.info("DB fetch 시작")
     conn = pymysql.connect(
         host=DB_HOST,
@@ -243,8 +232,27 @@ def db_fetch() -> None:
     logger.info("DB fetch 완료")
 
 
+# ──────────────────────────── Ray 콜백 제거 및 모델 로드 ────────────────────────────
+def load_yolo(weights: str, want_gpu: bool = True):
+    if want_gpu and torch.cuda.is_available():
+        try:
+            model = YOLO(weights).to("cuda:0")
+            model.fuse()
+            model = model.to("cuda:0", dtype=torch.float16)
+            logger.info(f"Loaded {weights} on GPU (fp16)")
+            return model, "cuda:0"
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower():
+                logger.warning("GPU OOM → CPU fallback")
+                torch.cuda.empty_cache()
+            else:
+                raise
+    logger.info(f"Loaded {weights} on CPU")
+    return YOLO(weights), "cpu"
+
+
 # ──────────────────────────── per-class conf 튜닝 ────────────────────────────
-def optimize_conf_thresh(weights_path):
+def optimize_conf_thresh(weights_path: str):
     logger.info("Optimizing per-class conf thresholds")
     model, device = load_yolo(weights_path)
     records = []  # (gt_idx, pred_idx, pred_conf)
@@ -269,14 +277,14 @@ def optimize_conf_thresh(weights_path):
         gt_idx = CLASS_NAMES_STAIN.index(gt)
         img = Image.open(os.path.join(TEST_STAIN_IMG_DIR, fn)).convert("RGB")
         img = resize_pad(img)
-        res = model(img, conf=0.0, device=device)[0]  # no pre-filter
+        res = model(img, conf=0.0, device=device)[0]
         if not res.boxes:
             records.append((gt_idx, None, 0.0))
             continue
         cls = res.boxes.cls.cpu().numpy().astype(int)
-        conf = res.boxes.conf.cpu().numpy()
-        top = conf.argmax()
-        records.append((gt_idx, cls[top], float(conf[top])))
+        confs = res.boxes.conf.cpu().numpy()
+        top_idx = confs.argmax()
+        records.append((gt_idx, cls[top_idx], float(confs[top_idx])))
 
     # 2) 클래스별 F1-opt 임계치 탐색
     new_thresh = {}
@@ -308,26 +316,23 @@ def optimize_conf_thresh(weights_path):
 
 
 # ──────────────────────────── 평가: Stain (miss 제외) ────────────────
-def evaluate_stain(weights_path):
+def evaluate_stain(weights_path: str):
     logger.info(f"Evaluating stain: {weights_path}")
     model, device = load_yolo(weights_path)
 
-    # 테스트 이미지 종횡비 유지 후 패딩 → resize
     def resize_pad(im):
         w, h = im.size
         m = max(w, h)
         pad = ((m - w) // 2, (m - h) // 2, m - w - (m - w) // 2, m - h - (m - h) // 2)
         return ImageOps.expand(im, pad, fill=(0, 0, 0)).resize((EVAL_STAIN_SIZE,) * 2)
 
-    # 통계 초기화
     stats = {
-        "s": defaultdict(int),  # total samples
-        "m": defaultdict(int),  # misses
-        "t1": defaultdict(int),  # top-1 correct
-        "t3": defaultdict(int),  # top-3 correct
+        "s": defaultdict(int),
+        "m": defaultdict(int),
+        "t1": defaultdict(int),
+        "t3": defaultdict(int),
     }
     inf_t = 0.0
-
     for fn in os.listdir(TEST_STAIN_IMG_DIR):
         if not fn.lower().endswith((".jpg", ".png")):
             continue
@@ -336,42 +341,36 @@ def evaluate_stain(weights_path):
             continue
         idx = CLASS_NAMES_STAIN.index(gt)
         stats["s"][idx] += 1
-
-        img = Image.open(os.path.join(TEST_STAIN_IMG_DIR, fn)).convert("RGB")
-        img = resize_pad(img)
+        img = resize_pad(
+            Image.open(os.path.join(TEST_STAIN_IMG_DIR, fn)).convert("RGB")
+        )
         t0 = time.time()
         res = model(img, conf=GLOBAL_CONF, device=device)[0]
         inf_t += time.time() - t0
-
-        # miss 체크
         if not res.boxes:
             stats["m"][idx] += 1
             continue
-
         cls = res.boxes.cls.cpu().numpy().astype(int)
-        conf = res.boxes.conf.cpu().numpy()
+        confs = res.boxes.conf.cpu().numpy()
         keep = np.array(
             [
-                conf[i] >= CLASS_CONF_THRESH[CLASS_NAMES_STAIN[c]]
+                confs[i] >= CLASS_CONF_THRESH[CLASS_NAMES_STAIN[c]]
                 for i, c in enumerate(cls)
             ],
             dtype=bool,
         )
-        cls, conf = cls[keep], conf[keep]
+        cls, confs = cls[keep], confs[keep]
         if cls.size == 0:
             stats["m"][idx] += 1
             continue
-
-        order = conf.argsort()[::-1]
+        order = confs.argsort()[::-1]
         top3 = cls[order[:3]]
         if idx == top3[0]:
             stats["t1"][idx] += 1
         if idx in top3:
             stats["t3"][idx] += 1
 
-    # per-class, overall 계산
-    per = {}
-    tot_s = tot_m = tot1 = tot3 = 0
+    per, tot_s, tot_m, tot1, tot3 = {}, 0, 0, 0, 0
     for i, name in enumerate(CLASS_NAMES_STAIN):
         s = stats["s"][i]
         m = stats["m"][i]
@@ -389,7 +388,6 @@ def evaluate_stain(weights_path):
             tot_m += m
             tot1 += o1
             tot3 += o3
-
     overall = {}
     total_non_miss = tot_s - tot_m
     if total_non_miss > 0:
@@ -405,23 +403,18 @@ def evaluate_stain(weights_path):
                 "avg_per_image_s": round(inf_t / tot_s, 4),
             },
         }
-
     logger.info(f"Stain overall (miss excluded): {overall}")
     return {"per_class": per, "overall": overall}
 
 
 # ──────────────────────────── 평가: Symbol (Zero-AP 제외 + CONF_THRESH/AUGMENT 적용) ────────────────────────────
-SYMBOL_CONF = 0.1  # summary 스크립트의 CONF_THRESH
-SYMBOL_AUG = True  # summary 스크립트의 AUGMENT
+SYMBOL_CONF = 0.1
+SYMBOL_AUG = True
 
 
-def evaluate_symbol(weights_path):
+def evaluate_symbol(weights_path: str):
     logger.info(f"Evaluating symbol: {weights_path}")
     model, device = load_yolo(weights_path)
-
-    # 1) support 계산하여 zero-AP 제외용 valid_ids 추출
-    #    summary 스크립트에서는 별도 함수(calc_support)가 있지만,
-    #    여기선 val 결과의 per_class로 바로 뽑아도 무방합니다.
     first = model.val(
         data=SYMBOL_DATA_YAML,
         split="test",
@@ -431,12 +424,9 @@ def evaluate_symbol(weights_path):
         device=device,
         verbose=False,
     )
-    # per-class AP 매핑
     initial_maps = dict(zip(first.ap_class_index, first.maps))
     valid_ids = [int(idx) for idx, ap in initial_maps.items() if ap > 0.0]
     logger.debug(f"Symbol valid IDs (AP>0): {valid_ids}")
-
-    # 2) 본 평가: conf=SYMBOL_CONF, augment=SYMBOL_AUG, classes=valid_ids
     final = model.val(
         data=SYMBOL_DATA_YAML,
         split="test",
@@ -447,15 +437,11 @@ def evaluate_symbol(weights_path):
         device=device,
         verbose=False,
     )
-    # 핵심 지표 추출
     P, R, mAP50, mAP5095 = final.box.mean_results()
     inf_ms = final.speed.get("inference", 0.0)
-
-    # 클래스별 AP 다시 매핑
     names = yaml.safe_load(open(SYMBOL_DATA_YAML))["names"]
     ap_map = {int(idx): float(ap) for idx, ap in zip(final.ap_class_index, final.maps)}
     per_cls = {name: ap_map.get(i, 0.0) for i, name in enumerate(names)}
-
     metrics = {
         "precision": P,
         "recall": R,
@@ -471,24 +457,19 @@ def evaluate_symbol(weights_path):
 # ──────────────────────────── 학습 & 평가 파이프라인 ────────────────────────────
 def retrain_and_eval():
     logger.info("Starting retrain & eval pipeline")
-
     # Stain 모델 재학습 + conf 튜닝 + 평가
     if os.listdir(TRAIN_STAIN_IMG_DIR):
         run = get_next_run(MODEL_BASE_STAIN)
         model = YOLO(STAIN_MODEL_PATH)
-        model.callbacks = []  # Ray 콜백 제거
+        model.callbacks = []
         model.train(project=MODEL_BASE_STAIN, name=run, save=True, **STAIN_CFG)
         best = os.path.join(MODEL_BASE_STAIN, run, "weights", "best.pt")
         logger.info(f"[Stain] Trained -> {best}")
-
-        # 1) per-class conf 최적화
         new_thresh, new_global = optimize_conf_thresh(best)
         CLASS_CONF_THRESH.clear()
         CLASS_CONF_THRESH.update(new_thresh)
         global GLOBAL_CONF
         GLOBAL_CONF = new_global
-
-        # 2) 튜닝된 임계치로 평가
         res = evaluate_stain(best)
         out = {
             "model_version": float(run) / 10,
@@ -501,7 +482,6 @@ def retrain_and_eval():
         logger.info(f"[Stain] Report -> {p}")
     else:
         logger.error("No stain train images found; skipping stain")
-
     # Symbol 모델 재학습 + 평가
     if os.listdir(TRAIN_SYM_IMG_DIR):
         run = get_next_run(MODEL_BASE_SYM)
@@ -510,7 +490,6 @@ def retrain_and_eval():
         model.train(project=MODEL_BASE_SYM, name=run, save=True, **SYMBOL_CFG)
         best = os.path.join(MODEL_BASE_SYM, run, "weights", "best.pt")
         logger.info(f"[Symbol] Trained -> {best}")
-
         res = evaluate_symbol(best)
         out = {
             "model_version": float(run) / 10,
@@ -523,7 +502,6 @@ def retrain_and_eval():
         logger.info(f"[Symbol] Report -> {p}")
     else:
         logger.error("No symbol train images found; skipping symbol")
-
     logger.info("Retrain & eval pipeline complete")
 
 
