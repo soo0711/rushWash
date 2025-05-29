@@ -19,7 +19,9 @@ public record AnalysisStainAndLabelResponse(
         String llmGeneratedGuide
 ) {
     public record OutputImagePaths(
+            @JsonProperty("stain")
             String stain,
+            @JsonProperty("label")
             String label
     ) {}
 }
