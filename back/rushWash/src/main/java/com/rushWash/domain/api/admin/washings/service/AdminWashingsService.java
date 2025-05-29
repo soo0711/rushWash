@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class AdminWashingsService {
     private final WashingService washingService;
     private final FileManagerService fileManagerService;
     private final WashingHistoryRepository washingHistoryRepository;
+    private static final Logger log = LoggerFactory.getLogger(AdminWashingsService.class);
 
     @Value("${python.script-path}")
     private String pythonScriptPath;
@@ -102,8 +105,10 @@ public class AdminWashingsService {
 
             int exitCode = process.waitFor();
             if (exitCode != 0) {
+                log.error("Python 오류 로그:\n{}", output.toString());  // 여기에 추가
                 throw new CustomException(ErrorCode.PYTHON_SCRIPT_EXECUTION_FAILED);
             }
+            log.error("Python 실행 결과 (stdout/stderr):\n{}", output.toString());
 
             return output.toString();
         } catch (IOException | InterruptedException e) {
