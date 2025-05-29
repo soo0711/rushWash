@@ -22,20 +22,6 @@ const UserTable = ({
             <tr>
               <th
                 scope="col"
-                className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"
-              >
-                <input
-                  type="checkbox"
-                  checked={
-                    selectedUsers.length > 0 &&
-                    selectedUsers.length === users.length
-                  }
-                  onChange={(e) => onSelectAllUsers(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
-                />
-              </th>
-              <th
-                scope="col"
                 className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                 onClick={() => onSort("id")}
               >
@@ -99,14 +85,6 @@ const UserTable = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.includes(user.id)}
-                    onChange={() => onSelectUser(user.id)}
-                    className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
-                  />
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-xl font-medium text-gray-900">
                   {user.id}
                 </td>

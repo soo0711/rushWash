@@ -18,7 +18,7 @@ const AdminUsersPage = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [bulkAction, setBulkAction] = useState("");
   const [processingBulkAction, setProcessingBulkAction] = useState(false);
-  
+
   // 필터 상태
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -42,11 +42,11 @@ const AdminUsersPage = () => {
 
   // 페이지 로드시 사용자 데이터 가져오기
   useEffect(() => {
-    fetchUsers();
-  }, [currentPage, sortField, sortDirection, filters, searchTerm]);
+    fetchUsers("");
+  }, [currentPage, sortField, sortDirection, filters]);
 
   // 사용자 데이터 가져오기 (실제 API 호출)
-  const fetchUsers = async () => {
+  const fetchUsers = async (searchQuery = "") => {
     setLoading(true);
     try {
       console.log("사용자 목록 요청 URL:", USERS_API_URL);
@@ -59,13 +59,15 @@ const AdminUsersPage = () => {
         // 필터링 및 정렬 로직
         let filteredUsers = [...response.data.data];
 
-        // 검색어 필터링
-        if (searchTerm) {
+        // 검색어 필터링 (searchTerm 대신 searchQuery 사용)
+
+        if (searchQuery) {
+          // searchQuery 직접 사용
           filteredUsers = filteredUsers.filter(
             (user) =>
-              (user.name && user.name.includes(searchTerm)) ||
-              (user.email && user.email.includes(searchTerm)) ||
-              (user.phoneNumber && user.phoneNumber.includes(searchTerm))
+              (user.name && user.name.includes(searchQuery)) ||
+              (user.email && user.email.includes(searchQuery)) ||
+              (user.phoneNumber && user.phoneNumber.includes(searchQuery))
           );
         }
 
@@ -137,6 +139,11 @@ const AdminUsersPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (searchQuery) => {
+    console.log("검색 실행:", searchQuery);
+    fetchUsers(searchQuery);
   };
 
   // 정렬 변경 핸들러
@@ -442,9 +449,10 @@ const AdminUsersPage = () => {
             setBulkAction={setBulkAction}
             selectedUsers={selectedUsers}
             handleBulkAction={handleBulkAction}
+            onSearch={handleSearch} // 검색 함수 전달
           />
 
-          {/* 제품 추가 버튼 */}
+          {/* 사용자 추가 버튼 
           <button
             onClick={() => setShowAddModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md flex items-center mb-6 text-lg font-medium transition duration-200"
@@ -462,7 +470,7 @@ const AdminUsersPage = () => {
               />
             </svg>
             <span>새 사용자 추가</span>
-          </button>
+          </button>*/}
 
           {/* 사용자 테이블 컴포넌트 */}
           <UserTable

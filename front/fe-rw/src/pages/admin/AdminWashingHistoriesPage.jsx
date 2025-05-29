@@ -522,22 +522,6 @@ const AdminWashingHistoriesPage = () => {
                   <tr>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={
-                          selectedHistories.length > 0 &&
-                          selectedHistories.length === currentHistories.length
-                        }
-                        onChange={(e) =>
-                          handleSelectAllHistories(e.target.checked)
-                        }
-                        className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
-                      />
-                    </th>
-                    <th
-                      scope="col"
                       className="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => handleSort("id")}
                     >
@@ -598,14 +582,6 @@ const AdminWashingHistoriesPage = () => {
                       key={`${history.id}-${index}`}
                       className="hover:bg-gray-50"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedHistories.includes(history.id)}
-                          onChange={() => handleSelectHistory(history.id)}
-                          className="rounded text-blue-600 focus:ring-blue-500 h-5 w-5"
-                        />
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-lg text-gray-500">
                         {history.id}
                       </td>

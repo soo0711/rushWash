@@ -32,9 +32,16 @@ const SignupPage = () => {
   // 입력 변경 핸들러
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    let processedValue = value;
+
+    // 전화번호 필드인 경우 포맷팅 적용
+    if (name === "phoneNumber") {
+      processedValue = formatPhoneNumber(value);
+    }
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : processedValue,
     });
 
     // 이메일이 변경되면 중복 확인 상태 초기화
@@ -87,6 +94,23 @@ const SignupPage = () => {
       setEmailChecked(false);
     } finally {
       setLoading(false);
+    }
+  };
+  // 전화번호 포맷팅 함수 추가
+  const formatPhoneNumber = (value) => {
+    // 숫자만 추출
+    const phoneNumber = value.replace(/[^\d]/g, "");
+
+    // 길이에 따라 포맷팅
+    if (phoneNumber.length <= 3) {
+      return phoneNumber;
+    } else if (phoneNumber.length <= 7) {
+      return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(3)}`;
+    } else {
+      return `${phoneNumber.slice(0, 3)}-${phoneNumber.slice(
+        3,
+        7
+      )}-${phoneNumber.slice(7, 11)}`;
     }
   };
 
@@ -238,6 +262,7 @@ const SignupPage = () => {
               onChange={handleChange}
               placeholder="ex) 010-1234-5678"
               className="w-full rounded-md border border-gray-300 p-3"
+              maxLength="13"
               required
               disabled={loading}
             />
