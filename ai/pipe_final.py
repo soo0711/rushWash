@@ -116,7 +116,7 @@ for p in [
 STAIN_CFG = dict(
     data=STAIN_DATA_YAML,
     epochs=5,
-    patience=1,
+    patience=2,
     batch=2,
     imgsz=1600,
     device="cuda:0",
@@ -131,7 +131,7 @@ STAIN_CFG = dict(
 SYMBOL_CFG = dict(
     data=SYMBOL_DATA_YAML,
     epochs=5,
-    patience=1,
+    patience=2,
     batch=2,
     imgsz=2048,
     device="cuda:0",
@@ -168,6 +168,10 @@ CLASS_CONF_THRESH = {
     "wine": 0.1,
 }
 GLOBAL_CONF = min(CLASS_CONF_THRESH.values())
+
+# ──────────────────────────── Symbol 평가 설정 ────────────────────────────
+SYMBOL_CONF = 0.1  # Confidence threshold for symbol evaluation
+SYMBOL_AUG = True  # Augmentation flag for symbol evaluation
 
 
 # ──────────────────────────── 유틸 함수 ────────────────────────────
@@ -407,41 +411,62 @@ def evaluate_stain(weights_path: str):
     return {"per_class": per, "overall": overall}
 
 
-# ──────────────────────────── 평가: Symbol (Zero-AP 제외 + CONF_THRESH/AUGMENT 적용) ────────────────────────────
-SYMBOL_CONF = 0.1
-SYMBOL_AUG = True
-
-
+# ──────────────────────────── 평가: Symbol (속도+메모리 균형 최적화) ────────────────────────────
 def evaluate_symbol(weights_path: str):
-    logger.info(f"Evaluating symbol: {weights_path}")
-    model, device = load_yolo(weights_path)
-    first = model.val(
-        data=SYMBOL_DATA_YAML,
-        split="test",
-        imgsz=SYMBOL_CFG["imgsz"],
-        conf=SYMBOL_CONF,
-        augment=False,
-        device=device,
-        verbose=False,
-    )
-    initial_maps = dict(zip(first.ap_class_index, first.maps))
-    valid_ids = [int(idx) for idx, ap in initial_maps.items() if ap > 0.0]
-    logger.debug(f"Symbol valid IDs (AP>0): {valid_ids}")
-    final = model.val(
-        data=SYMBOL_DATA_YAML,
-        split="test",
-        imgsz=SYMBOL_CFG["imgsz"],
-        conf=SYMBOL_CONF,
-        augment=SYMBOL_AUG,
-        classes=valid_ids,
-        device=device,
-        verbose=False,
-    )
+    """
+    Symbol 모델 평가 (속도와 메모리 균형)
+    - GPU fp16 사용
+    - batch 크기 2, workers 2
+    - with torch.no_grad()로 계산 그래프 미생성
+    - CUDA 캐시 비우기
+    """
+    logger.info(f"Evaluating symbol (balanced speed & memory): {weights_path}")
+    # GPU 사용 및 fp16 변환
+    model, device = load_yolo(weights_path, want_gpu=True)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    # 그래디언트 비활성화하여 메모리 절약
+    with torch.no_grad():
+        # 1) support 계산
+        first = model.val(
+            data=SYMBOL_DATA_YAML,
+            split="test",
+            imgsz=SYMBOL_CFG["imgsz"],
+            conf=SYMBOL_CONF,
+            augment=False,
+            device=device,
+            verbose=False,
+            batch=2,
+            workers=2,
+            half=True,
+        )
+        initial_maps = dict(zip(first.ap_class_index, first.maps))
+        valid_ids = [int(idx) for idx, ap in initial_maps.items() if ap > 0.0]
+        logger.debug(f"Symbol valid IDs (AP>0): {valid_ids}")
+
+        # 2) 실제 평가 수행
+        final = model.val(
+            data=SYMBOL_DATA_YAML,
+            split="test",
+            imgsz=SYMBOL_CFG["imgsz"],
+            conf=SYMBOL_CONF,
+            augment=SYMBOL_AUG,
+            classes=valid_ids,
+            device=device,
+            verbose=False,
+            batch=2,
+            workers=2,
+            half=True,
+        )
+
+    # 결과 추출
     P, R, mAP50, mAP5095 = final.box.mean_results()
     inf_ms = final.speed.get("inference", 0.0)
     names = yaml.safe_load(open(SYMBOL_DATA_YAML))["names"]
     ap_map = {int(idx): float(ap) for idx, ap in zip(final.ap_class_index, final.maps)}
     per_cls = {name: ap_map.get(i, 0.0) for i, name in enumerate(names)}
+
     metrics = {
         "precision": P,
         "recall": R,
@@ -450,7 +475,7 @@ def evaluate_symbol(weights_path: str):
         "inference_time_ms": inf_ms,
         "per_class": per_cls,
     }
-    logger.info(f"Symbol metrics (filtered): {metrics}")
+    logger.info(f"Symbol metrics (balanced): {metrics}")
     return metrics
 
 
@@ -472,7 +497,7 @@ def retrain_and_eval():
         GLOBAL_CONF = new_global
         res = evaluate_stain(best)
         out = {
-            "model_version": float(run) / 10,
+            "model_version": f"v{float(run) / 10}",
             "model_type": "stain",
             "weights_path": best,
             "metrics": res,
@@ -492,7 +517,7 @@ def retrain_and_eval():
         logger.info(f"[Symbol] Trained -> {best}")
         res = evaluate_symbol(best)
         out = {
-            "model_version": float(run) / 10,
+            "model_version": f"v{float(run) / 10}",
             "model_type": "symbol",
             "weights_path": best,
             "metrics": res,
