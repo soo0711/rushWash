@@ -1,0 +1,13 @@
+test: rushWash\ai\test\stain\test\images
+
+nc: 9
+names:
+  - blood
+  - coffee
+  - earth
+  - ink
+  - kimchi
+  - lipstick
+  - mustard
+  - oil
+  - wine
