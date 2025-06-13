@@ -1,0 +1,6 @@
+train: /home/t25119/aiLab/test/rushWash/ai/data/stain/train/images
+val: /home/t25119/aiLab/test/rushWash/ai/data/stain/val/images
+test: /home/t25119/aiLab/test/rushWash/ai/data/stain/test/images
+
+nc: 9
+names: [blood, coffee, earth, ink, kimchi, lipstick, mustard, oil, wine]
