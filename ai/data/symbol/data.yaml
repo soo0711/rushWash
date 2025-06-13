@@ -1,0 +1,49 @@
+train:  /home/t25119/v109.src/ai/data/symbol/tain/images
+val:  /home/t25119/v109.src/ai/data/symbol/val/images
+test:  /home/t25119/v109.src/ai/data/symbol/test/images
+
+nc: 43
+names:
+  - 30C                         # 0
+  - 40C                         # 1
+  - 50C                         # 2
+  - 60C                         # 3
+  - 70C                         # 4
+  - 95C                         # 5
+  - DN_bleach                   # 6
+  - DN_dry                      # 7
+  - DN_dry_clean                # 8
+  - DN_iron                     # 9
+  - DN_steam                    # 10
+  - DN_tumble_dry               # 11
+  - DN_wash                     # 12
+  - DN_wet_clean                # 13
+  - DN_wring                    # 14
+  - bleach                      # 15
+  - chlorine_bleach             # 16
+  - non_chlorine_bleach         # 17
+  - drip_dry                    # 18
+  - drip_dry_in_shade           # 19
+  - dry_flat                    # 20
+  - dry_flat_in_shade           # 21
+  - line_dry                    # 22
+  - line_dry_in_shade           # 23
+  - natural_dry                 # 24
+  - shade_dry                   # 25
+  - dry_clean                   # 26   
+  - dry_clean_any_solvent_except_trichloroethylene   # 27
+  - dry_clean_petrol_only       # 28
+  - hand_wash                   # 29
+  - machine_wash                # 30
+  - iron                        # 31
+  - iron_high                   # 32
+  - iron_medium                 # 33
+  - iron_low                    # 34
+  - steam                       # 35
+  - tumble_dry_normal           # 36
+  - tumble_dry_low              # 37
+  - tumble_dry_medium           # 38
+  - tumble_dry_high             # 39
+  - tumble_dry_no_heat          # 40
+  - wet_clean                   # 41
+  - wring                       # 42

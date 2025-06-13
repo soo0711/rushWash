@@ -1,16 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/common/Header";
 
 const MainPage = () => {
   const navigate = useNavigate();
   const [hoveredMenu, setHoveredMenu] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // 물방울 터지는 효과를 위한 상태 추가
   const [burstEffects, setBurstEffects] = useState({});
 
+  // 컴포넌트 마운트 시 로그인 상태 확인
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setIsLoggedIn(!!token); // token이 있으면 true, 없으면 false
+  }, []);
+
   const handleMenuClick = (menuName) => {
     console.log(`${menuName} 메뉴가 클릭되었습니다`);
+
+    // 로그인이 필요한 메뉴들
+    const authRequiredMenus = ["분석하기", "분석내역"];
+
+    if (authRequiredMenus.includes(menuName) && !isLoggedIn) {
+      // 로그인이 안되어 있으면 alert만 표시
+      alert("로그인이 필요한 서비스입니다.");
+      return;
+    }
+
     switch (menuName) {
       case "분석하기":
         navigate("/analyze");
@@ -122,8 +139,8 @@ const MainPage = () => {
 
         {/* 콘텐츠 */}
         <div className="relative z-10">
-          <p className="m-0 font-bold text-5xl md:text-4xl">{menuName}</p>
-          <span className="text-xl md:text-xl text-gray-700 mt-1 px-1 leading-tight">
+          <p className="m-0 font-bold text-3xl md:text-4xl">{menuName}</p>
+          <span className="text-sm md:text-xl text-gray-700 mt-1 px-1 leading-tight">
             {description}
           </span>
         </div>

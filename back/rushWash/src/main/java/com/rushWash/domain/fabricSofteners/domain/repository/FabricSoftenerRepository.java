@@ -10,8 +10,11 @@ import java.util.List;
 
 public interface FabricSoftenerRepository extends JpaRepository<FabricSoftener,Integer> {
 
-    @Query("SELECT new com.rushWash.domain.fabricSofteners.api.dto.response.FabricSoftenerResponse(f.brand, f.productName) " +
+    @Query("SELECT new com.rushWash.domain.fabricSofteners.api.dto.response.FabricSoftenerResponse(f.brand, f.productName, f.imageUrl) " +
             "FROM FabricSoftener f WHERE f.scentCategory = :fabricScent")
     List<FabricSoftenerResponse> findFabricSoftenerListByScentCategory(@Param("fabricScent") String fabricScent);
     List<FabricSoftener> findAllByOrderByScentCategory();
+
+    @Query("SELECT fs.scentCategory, COUNT(fs) FROM FabricSoftener fs GROUP BY fs.scentCategory")
+    List<Object[]> countByScentCategory();
 }

@@ -40,7 +40,7 @@ const AnalyzePage = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col items-center">
               <img
-                src={require("../../assets/images/home.png")}
+                src={require("../../assets/images/stain.png")}
                 alt="얼룩 예시"
                 className="w-full h-auto rounded-md"
               />
@@ -48,7 +48,7 @@ const AnalyzePage = () => {
             </div>
             <div className="flex flex-col items-center">
               <img
-                src={require("../../assets/images/home.png")}
+                src={require("../../assets/images/label.png")}
                 alt="라벨 예시"
                 className="w-full h-auto rounded-md"
               />

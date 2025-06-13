@@ -22,6 +22,8 @@ public class FabricSoftener {
     private String brand;
     @Column(name = "product_name")
     private String productName;
+    @Column(name = "image_url")
+    private String imageUrl;
     @Column(name = "created_at", updatable = false)
     @UpdateTimestamp
     private LocalDateTime createdAt;
@@ -29,9 +31,10 @@ public class FabricSoftener {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    public void updateInfo(String scentCategory, String brand, String productName) {
+    public void updateInfo(String scentCategory, String brand, String productName, String imageUrl) {
         this.scentCategory = scentCategory;
         this.brand = brand;
         this.productName = productName;
+        this.imageUrl = imageUrl;
     }
 }

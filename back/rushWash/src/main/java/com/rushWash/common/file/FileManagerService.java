@@ -11,8 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.UUID;
 
 @Component
 public class FileManagerService {
@@ -23,85 +22,28 @@ public class FileManagerService {
         this.uploadPath = uploadPath;
     }
 
-    // input: File 원본, userLoginId(폴더명)		output: 이미지 경로
-    // List 여러 파일
-    public List<String> saveFile(String userId, List<MultipartFile> files) {
-        String directoryName = userId + "_" + System.currentTimeMillis();
-        String filePath = uploadPath + "/images/" + directoryName;
-
-        File directory = new File(filePath);
-
-        if (directory.mkdir() == false) {
-            return null;
-        }
-
-        List<String> images = new ArrayList<>();
-
-        try {
-            for (MultipartFile file : files) {
-                byte[] bytes = file.getBytes();
-                Path path = Paths.get(filePath + "/" + file.getOriginalFilename());
-                Files.write(path, bytes); // 파일 업로드
-                images.add("/images/" + directoryName + "/" + file.getOriginalFilename());
-            }
-        } catch (IOException e) {
-            throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
-        }
-
-        // http://localhost/images/aaaa_1234354/gg.png
-        return images;
-    }
-
-
-    // input: imgPath 	output: X
-    public void deleteFile(List<String> imagePaths) {
-        for (String imagePath : imagePaths) {
-            Path path = Paths.get(uploadPath + imagePath);
-
-            // 삭제할 이미지 존재?
-            if (Files.exists(path)) {
-                try {
-                    Files.delete(path);
-                } catch (IOException e) {
-                    throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
-                }
-
-            }
-        }
-
-        // 폴더 지우기
-        Path paths = Paths.get(uploadPath + imagePaths.get(0)).getParent();
-        if (Files.exists(paths)) {
-            try {
-                Files.delete(paths);
-            } catch (IOException e) {
-                throw new CustomException(ErrorCode.DIRECTORY_DELETE_FAILED);
-            }
-        }
-    }
-
     // 단일 파일
-    public String saveFile(String userId, MultipartFile file) {
-        String directoryName = userId + "_" + System.currentTimeMillis();
+    public String saveFile(int userId, MultipartFile file) {
+        String uniqueId = UUID.randomUUID().toString();
+        String directoryName = userId + "_" + uniqueId;
         String filePath = uploadPath + "/images/" + directoryName;
 
         File directory = new File(filePath);
         if (!directory.mkdir()) {
-            return null;
+            throw new CustomException(ErrorCode.DIRECTORY_CREATION_FAILED);
         }
 
         try {
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null || originalFilename.isBlank()) {
-                return null;
+                throw new CustomException(ErrorCode.INVALID_FILE_NAME);
             }
             byte[] bytes = file.getBytes();
             Path path = Paths.get(filePath, originalFilename);
             Files.write(path, bytes); // 실제 파일 업로드
         } catch (IOException e) {
             e.printStackTrace();
-            // 필요 시 예외 던지기
-            return null;
+            throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
         }
 
         return "/images/" + directoryName + "/" + file.getOriginalFilename();
@@ -129,6 +71,47 @@ public class FileManagerService {
                 }
             }
         }
+    }
+
+    public void deleteFabricSoftenerFile(String imagePath) { ///images/sooo_1706159478390/gg.jpg
+        Path path = Paths.get(uploadPath + imagePath);
+
+        // 삭제할 이미지 존재?
+        if (Files.exists(path)) {
+            try {
+                Files.delete(path);
+            } catch (IOException e) {
+                throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
+            }
+        }
+    }
+
+    // 섬유유연제 이미지 저장
+    public String saveFile(String scentCategory, MultipartFile file) {
+        String filePath = uploadPath + "/images/" + scentCategory;
+
+        File directory = new File(filePath);
+
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) {
+                throw new CustomException(ErrorCode.DIRECTORY_CREATION_FAILED);
+            }
+        }
+        String originalFilename = "";
+        try {
+            originalFilename = System.currentTimeMillis()+ "_" + file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isBlank()) {
+                throw new CustomException(ErrorCode.INVALID_FILE_NAME);
+            }
+            byte[] bytes = file.getBytes();
+            Path path = Paths.get(filePath, originalFilename);
+            Files.write(path, bytes); // 실제 파일 업로드
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CustomException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+
+        return "/images/" + scentCategory + "/" + originalFilename;
     }
 
 }

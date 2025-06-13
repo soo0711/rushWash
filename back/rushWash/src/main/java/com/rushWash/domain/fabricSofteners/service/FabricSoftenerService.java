@@ -6,7 +6,9 @@ import com.rushWash.domain.fabricSofteners.domain.repository.FabricSoftenerRepos
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -22,4 +24,20 @@ public class FabricSoftenerService {
         return fabricSoftenerRepository.findAllByOrderByScentCategory();
     }
 
+    public int getFabricSoftenerCount() {
+        return (int)fabricSoftenerRepository.count();
+    }
+
+    public Map<String, Integer> getScentCount() {
+        List<Object[]> resultList = fabricSoftenerRepository.countByScentCategory();
+        Map<String, Integer> scentCountMap = new HashMap<>();
+
+        for (Object[] row : resultList) {
+            String scent = (String) row[0];
+            Long count = (Long) row[1];
+            scentCountMap.put(scent, count.intValue());
+        }
+
+        return scentCountMap;
+    }
 }

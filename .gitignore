@@ -36,4 +36,11 @@ out/
 ### VS Code ###
 .vscode/
 *.yml
+!.github/workflows/*.yml
 
+### python ###
+venv
+stain_input
+symbol_input
+llm
+runs
