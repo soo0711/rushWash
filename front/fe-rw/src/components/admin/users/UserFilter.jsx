@@ -9,30 +9,18 @@ const UserFilter = ({
   setBulkAction,
   selectedUsers,
   handleBulkAction,
+  onSearch,
 }) => {
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && onSearch) {
+      onSearch(searchTerm);
+    }
+  };
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-          {/* 상태 필터 */}
-          <div>
-            <label className="block text-lg font-medium text-gray-700 mb-1">
-              상태 필터
-            </label>
-            <select
-              className="text-lg border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              value={filters.status}
-              onChange={(e) =>
-                setFilters({ ...filters, status: e.target.value })
-              }
-            >
-              <option value="all">모든 사용자</option>
-              <option value="verified">인증 완료</option>
-              <option value="unverified">미인증</option>
-            </select>
-          </div>
-
-          {/* 일괄 작업 */}
+          {/* 일괄 작업 
           <div className="md:ml-4">
             <label className="block text-lg font-medium text-gray-700 mb-1">
               일괄 작업
@@ -45,8 +33,6 @@ const UserFilter = ({
               >
                 <option value="">작업 선택</option>
                 <option value="delete">삭제</option>
-                <option value="verify">인증 처리</option>
-                <option value="unverify">인증 취소</option>
               </select>
               <button
                 className={`text-lg px-3 py-2 rounded-r-md ${
@@ -60,7 +46,7 @@ const UserFilter = ({
                 적용
               </button>
             </div>
-          </div>
+          </div>*/}
         </div>
 
         {/* 검색 */}
@@ -69,12 +55,27 @@ const UserFilter = ({
             검색
           </label>
           <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-6 w-6 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
             <input
               type="text"
               placeholder="이름, 이메일, 전화번호 검색"
               className="text-lg border border-gray-300 rounded-md pl-10 pr-4 py-2 w-full md:w-64 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i className="fas fa-search text-gray-400"></i>

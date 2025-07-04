@@ -1,0 +1,16 @@
+path: aidata/stain
+train: train/images
+val: val/images
+test: test
+
+nc: 9
+names:
+  - blood
+  - coffee
+  - earth
+  - ink
+  - kimchi
+  - lipstick
+  - mustard
+  - oil
+  - wine

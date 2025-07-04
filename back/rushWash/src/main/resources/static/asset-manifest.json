@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/static/css/main.ebfc6309.css",
+    "main.js": "/static/js/main.57cedb7c.js",
+    "static/js/453.68f0e975.chunk.js": "/static/js/453.68f0e975.chunk.js",
+    "static/media/YoonSSH.ttf": "/static/media/YoonSSH.bc7c1f317cf5da97f390.ttf",
+    "static/media/Sandol.ttf": "/static/media/Sandol.3ec4a1fdda6114923036.ttf",
+    "static/media/mainbanner.png": "/static/media/mainbanner.d00487568a73a1608a01.png",
+    "index.html": "/index.html",
+    "main.ebfc6309.css.map": "/static/css/main.ebfc6309.css.map",
+    "main.57cedb7c.js.map": "/static/js/main.57cedb7c.js.map",
+    "453.68f0e975.chunk.js.map": "/static/js/453.68f0e975.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.ebfc6309.css",
+    "static/js/main.57cedb7c.js"
+  ]
+}

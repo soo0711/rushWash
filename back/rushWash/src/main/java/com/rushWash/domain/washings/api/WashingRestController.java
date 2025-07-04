@@ -30,14 +30,14 @@ public class WashingRestController {
         }
 
         int userId = tokenService.extractUserIdFromHeader(authHeader);
-
+        System.out.print(userId);
         return ApiResponse.ok(washingService.getWashingListByUserId(userId));
     }
 
     @GetMapping("/{washingHistoryId}")
     public ApiResponse<WashingDetailResponse> getWashingDetail(
             @RequestHeader(name = "Authorization", required = false) String authHeader,
-            @PathVariable int washingHistoryId) {
+            @PathVariable("washingHistoryId") int washingHistoryId) {
 
         if (authHeader == null || authHeader.isEmpty()){
             throw new CustomException(ErrorCode.INVALID_TOKEN);
@@ -50,7 +50,7 @@ public class WashingRestController {
 
     @PatchMapping("/{washingHistoryId}")
     public ApiResponse<String> washingEstimation(
-            @PathVariable int washingHistoryId,
+            @PathVariable("washingHistoryId") int washingHistoryId,
             @RequestBody WashingEstimationRequest request,
             @RequestHeader(name = "Authorization", required = false) String authHeader) {
 

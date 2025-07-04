@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { USER_API, useProxy, PROXY_API } from "../../constants/api";
 
 const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // API URL 설정
+  const SIGN_OUT_URL = useProxy ? PROXY_API.SIGN_OUT : USER_API.SIGN_OUT;
 
   // 현재 경로에 따라 활성화된 메뉴 결정
   const isActive = (path) => {
@@ -29,9 +35,54 @@ const AdminSidebar = () => {
   );
 
   // 로그아웃 처리
-  const handleLogout = () => {
-    // 실제로는 API 호출 등의 로그아웃 처리
-    navigate("/admin");
+  const handleLogout = async () => {
+    if (isLoggingOut) return; // 중복 요청 방지
+
+    try {
+      setIsLoggingOut(true);
+
+      const token = localStorage.getItem("accessToken");
+
+      // 로그아웃 API 호출
+      const response = await axios.post(
+        SIGN_OUT_URL,
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
+      );
+
+      // API 호출 성공/실패와 관계없이 로컬 스토리지 정리
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userData");
+
+      if (response.data.success) {
+        alert("로그아웃되었습니다.");
+      } else {
+        // API는 실패했지만 로컬 데이터는 정리됨
+        console.warn("로그아웃 API 실패:", response.data.error);
+        alert("로그아웃되었습니다.");
+      }
+
+      // 관리자 로그인 페이지로 이동
+      navigate("/");
+    } catch (error) {
+      console.error("로그아웃 요청 실패:", error);
+
+      // API 요청이 실패해도 로컬 스토리지는 정리
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userData");
+
+      alert("로그아웃되었습니다.");
+      navigate("/");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -90,6 +141,18 @@ const AdminSidebar = () => {
             path="/admin/scent-categories"
           /> */}
 
+          {/* 얼룩 세탁법 내역 관리 */}
+          <li className="mt-6 px-4">
+            <h2 className="text-xl text-blue-400 font-semibold uppercase tracking-wider">
+              얼룩 세탁법 관리
+            </h2>
+          </li>
+          <SidebarMenuItem
+            icon={<i className="fas fa-history"></i>}
+            title="얼룩 세탁법 내역"
+            path="/admin/stain-removal"
+          />
+
           {/* 분석 관리 */}
           <li className="mt-6 px-4">
             <h2 className="text-xl text-blue-400 font-semibold uppercase tracking-wider">
@@ -101,6 +164,7 @@ const AdminSidebar = () => {
             title="분석 내역"
             path="/admin/washing-histories"
           />
+
           {/* AI 관리 */}
           <li className="mt-6 px-4">
             <h2 className="text-xl text-blue-400 font-semibold uppercase tracking-wider">
@@ -118,10 +182,15 @@ const AdminSidebar = () => {
       <div className="border-t border-blue-700 p-4">
         <button
           onClick={handleLogout}
-          className="flex items-center text-blue-100 hover:text-white w-full"
+          disabled={isLoggingOut}
+          className="flex items-center text-blue-100 hover:text-white w-full disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <i className="fas fa-sign-out-alt mr-3"></i>
-          <span>로그아웃</span>
+          <i
+            className={`fas ${
+              isLoggingOut ? "fa-spinner fa-spin" : "fa-sign-out-alt"
+            } mr-3`}
+          ></i>
+          <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
         </button>
       </div>
     </div>
