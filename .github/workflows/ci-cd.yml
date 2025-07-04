@@ -11,32 +11,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+
+      - name: Setup Gradle Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: JDK 17 설치
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: fronted 디렉토리 안 파일 지우기
+      - name: frontend 로 front 파일 복사 (변경된 파일만)
         run: |
-          rm -rf back/rushWash/src/main/frontend/* \
-                 back/rushWash/src/main/frontend/.[!.]* \
-                 back/rushWash/src/main/frontend/..?* || true
+          rsync -a --delete front/fe-rw/ back/rushWash/src/main/frontend/
 
-      - name: frontend 로 front 파일 복사
-        run: |
-          mkdir -p back/rushWash/src/main/frontend
-          cp -r front/fe-rw/* back/rushWash/src/main/frontend/
-
-#      - name: frontend 로 front 파일 복사 (변경된 파일만)
-#        run: |
-#          rsync -a --delete front/fe-rw/ back/rushWash/src/main/frontend/
-#
-#      - name: Grant permission to Gradle
-#        run: chmod +x back/rushWash/gradlew
-#        working-directory: .
-#        env:
-#          CI: false
+      - name: Grant permission to Gradle
+        run: chmod +x back/rushWash/gradlew
+        working-directory: .
+        env:
+          CI: false
 
       - name: Grant permission to Gradle
         run: chmod +x back/rushWash/gradlew
@@ -58,9 +58,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      #      - name: 기존 ai 폴더 삭제
-      #        run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "rm -rf /home/t25119/v109.src/ai"
-
       - name: 배포 back 디렉토리 만들기
         run: ssh -o StrictHostKeyChecking=no -p 22 t25119@ceprj.gachon.ac.kr "mkdir -p /home/t25119/v109.src/back"
 
@@ -72,9 +69,6 @@ jobs:
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no -p 22" \
             ai/ t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/ai/
-
-      #      - name: ai 폴더 복사
-      #        run: scp -o StrictHostKeyChecking=no -r -P 22 ai t25119@ceprj.gachon.ac.kr:/home/t25119/v109.src/
 
       - name: 서버 실행
         run: |
